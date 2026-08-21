@@ -1,7 +1,7 @@
 {
-  "name": "SelfBalance Lab — GYRO",
-  "short_name": "GYRO Lab",
-  "description": "Assemble, wire, and program a self-balancing robot in your browser, then tune a real PID loop and drive it.",
+  "name": "SelfBalance Lab",
+  "short_name": "SelfBalance",
+  "description": "Build electronics that actually work. Drag parts onto the bench, wire them pin to pin, and a real circuit solver and physics engine run what you built.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0d12",
