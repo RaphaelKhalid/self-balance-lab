@@ -54,7 +54,7 @@ try {
   showFatal();
   throw e;
 }
-const { renderer, scene, camera, controls, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights } = sceneBits;
+const { renderer, scene, camera, controls, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights, frameObject } = sceneBits;
 // Feed the renderer to the perf HUD so it can show draw-call/triangle counts (no-op when the HUD is off).
 window.__perf?.setRenderer?.(renderer);
 // Optional captured-room backdrop (Gaussian splat). Inert unless a splat is
@@ -226,6 +226,13 @@ const coldOpened = api.get_document().components.length === 0 &&
     examples.load(demo, { silent: true });
     return true;
   })();
+
+// Whatever ended up on the bench at boot — seeded, restored from localStorage,
+// or decoded from a #build= link — gets framed. The default camera sat far
+// enough back that a working circuit read as a speck on an empty counter; a
+// build should arrive composed regardless of where its parts happen to sit.
+// One shot at boot only: it must never fight the user's own orbiting.
+requestAnimationFrame(() => frameObject(assemblyApi.group));
 
 // First-run onboarding coach — a 5-step build-your-first-circuit checklist that
 // advances by watching real API state; self-retires once done (persisted).
