@@ -90,7 +90,7 @@
   <!-- CENTER: 3D workspace -->
   <main id="workspace">
     <div id="workspace-hud">
-      <span id="hud-status" role="status" aria-live="polite">Drag parts from the tray onto the chassis</span>
+      <span id="hud-status" role="status" aria-live="polite">Drag parts from the tray onto the bench</span>
     </div>
     <!-- First-run coach: a 5-step "build your first circuit" checklist that
          advances by watching real app state. Hidden once completed (persisted). -->
@@ -135,7 +135,7 @@
       <span class="dot dot-green"></span> SIMULATE — <span id="firmware-file">battery → motor</span>
       <button class="panel-min" data-panel="right-panel" aria-label="Minimize panel" title="Minimize">▾</button>
     </header>
-    <div id="run-hint">Place a <b>battery</b> and a <b>motor</b>, wire <span class="mono">+→A</span> and <span class="mono">−→B</span>, then hit <b>Run</b> to watch it spin. The Inspector (left) shows the solved current.</div>
+    <div id="run-hint">Wire a <b>battery</b> to a <b>motor</b>, then hit <b>RUN</b> to drive it from the solved current. The Inspector shows current and speed live.</div>
     <button id="upload-btn"><i data-lucide="play"></i><span>RUN</span></button>
   </aside>
 

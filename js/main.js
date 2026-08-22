@@ -154,7 +154,14 @@ const api = createApi({
   hooks: {
     // any document change (drag, wire, clear, undo, redo, a script, a #build=
     // load) re-syncs the 3D view — the doc is the single source of truth.
-    onDocChange: () => { assemblyApi?.sync(); topbar?.refreshChip(); checkActivation(); },
+    // The checklist used to refresh only from creator-assembly's own pointer
+    // handlers, so a build that arrived any other way — a seeded cold open, a
+    // #build= link, a Jarvis tool call, undo/redo — left the CONNECTIONS panel
+    // showing its 'place all parts' placeholder over a fully wired circuit.
+    // Hanging it here means it follows the document, like everything else.
+    onDocChange: () => {
+      assemblyApi?.sync(); topbar?.refreshChip(); hud?.refreshChecklist(); checkActivation();
+    },
     sim: {
       run: () => enterSim(),
       stop: () => exitSim(),
