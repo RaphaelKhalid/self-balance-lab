@@ -99,22 +99,47 @@ export function createScene(canvas) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(envScene, 0.04).texture;
 
-  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 2000);
-  camera.position.set(34, 80, 93);
+  // 42° rather than a wide 55°: at bench scale a wide lens turns the parts into
+  // specks in a room. The narrower lens compresses the scene and reads as a
+  // product photograph of the work surface, which is what this is.
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 2000);
+  camera.position.set(26, 52, 66);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.target.set(4, 0, 2);
+  controls.target.set(4, 3, 2);   // bench surface, not the floor plane
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.minDistance = 8;
-  controls.maxDistance = 175;
+  // 175 let the camera retreat far enough that the build became a speck on an
+  // empty counter — the framing that made a working circuit look like nothing.
+  controls.maxDistance = 120;
   // The room is open only towards +z — it has a back wall, two side walls and a
   // ceiling, and no fourth wall. Orbiting past ±85° puts the camera outside that
   // shell, looking at the blank back of the plaster. Clamping the azimuth keeps
   // every reachable angle a view *of the room* rather than of its exterior.
   controls.minAzimuthAngle = -Math.PI * 0.47;
   controls.maxAzimuthAngle = Math.PI * 0.47;
+
+  // Fit the camera to a subject's bounding box. Hand-tuned coordinates frame one
+  // specific build; anything else lands off-centre or clipped. This computes the
+  // distance the current lens needs to contain the subject and points the orbit
+  // target at its centre, so any build — seeded, restored or shared — arrives
+  // composed rather than accidentally cropped.
+  function frameObject(object, { padding = 1.9, dir = [0.34, 0.66, 0.9] } = {}) {
+    const box = new THREE.Box3().setFromObject(object);
+    if (box.isEmpty()) return false;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    // half the diagonal, floored so a single small part doesn't jam the lens
+    const radius = Math.max(size.length() * 0.5, 7);
+    const dist = (radius / Math.sin((camera.fov * Math.PI / 180) / 2)) * padding;
+    const v = new THREE.Vector3(...dir).normalize();
+    camera.position.copy(center).addScaledVector(v, dist);
+    controls.target.copy(center);
+    controls.update();
+    return true;
+  }
 
   // ── calibrated three-point studio lighting (cool, product-photo) ──────────
   // hemisphere: cool sky above, dark cool bounce below — sets the neutral base
@@ -342,7 +367,7 @@ export function createScene(canvas) {
   // own lighting has to switch it off explicitly or the two rigs sum, which
   // both over-exposes the scene and drags a cool blue cast across it.
   const studioLights = [studioHemi, studioAmbient, key, fill, rim, pool];
-  return { renderer, scene, camera, controls, slotMeshes, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights };
+  return { renderer, scene, camera, controls, slotMeshes, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights, frameObject };
 }
 
 // Deep-clone the shared gradient shader's uniforms so each mesh (env dome +
