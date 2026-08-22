@@ -14,7 +14,7 @@ import { emptyDoc } from './model/doc.js';
 import { CreatorSim } from './sim/creator-sim.js';
 import { initDocSave } from './app/docsave.js';
 import { initInspector } from './app/inspector.js';
-import { initExamples } from './app/examples.js';
+import { initExamples, EXAMPLES } from './app/examples.js';
 import { initJarvis } from './app/jarvis.js';
 import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
@@ -206,12 +206,33 @@ const docSave = initDocSave(api, { onFlash: (m, k) => hud.flash(m, k) });
 // Inspector: read-only DOM view of the live document + electrical solve (the M1
 // replacement for the Guide rail). Polls the API; owns no state of its own.
 initInspector(api, { getMode: () => state.mode });
-// First-run onboarding coach — a 5-step build-your-first-circuit checklist that
-// advances by watching real API state; self-retires once done (persisted).
-const coach = initCoach(api);
 // Example-circuit gallery — scripted builds (incl. the candle/thermistor and
 // photoresistor "physical input" demos) loaded through the same API.
-initExamples({ api, hud, exitSim: () => exitSim() });
+const examples = initExamples({ api, hud, exitSim: () => exitSim() });
+
+// ── cold open ───────────────────────────────────────────────────
+// A first-time visitor used to land on an empty bench behind a welcome modal,
+// with the coach's checklist on top of that: two dismissals to reach a scene
+// where nothing was happening and nothing showed what the product does. If
+// there is no build to restore (no #build=, no save), seed a live one instead
+// — battery → potentiometer → motor, already solving, wheel already turning,
+// with a knob you can scroll to change the speed. The first interaction is
+// therefore "turn this and watch it react", which needs no instructions.
+// Anyone who wants the blank bench is one Clear board away.
+const coldOpened = api.get_document().components.length === 0 &&
+  (() => {
+    const demo = EXAMPLES.find(e => e.id === 'pot-dimmer');
+    if (!demo) return false;
+    examples.load(demo, { silent: true });
+    return true;
+  })();
+
+// First-run onboarding coach — a 5-step build-your-first-circuit checklist that
+// advances by watching real API state; self-retires once done (persisted).
+// Skipped on a cold open: its first four steps are already satisfied by the
+// seeded circuit, so it would open on "press RUN" with no context for what the
+// other steps were.
+const coach = coldOpened ? null : initCoach(api);
 // Jarvis: natural-language build assistant (M2). Acts only through the API.
 // Free/anon users are quota-capped (protects the shared Gemini free key); pro
 // (profiles.tier) is uncapped. currentTier is updated on sign-in below.
