@@ -1,6 +1,6 @@
-# JARVIS Circuits — MCP server
+# SelfBalance Lab Circuits — MCP server
 
-The [JARVIS](https://selfbalance-lab.vercel.app) circuit sandbox, exposed as MCP
+The [SelfBalance Lab](https://selfbalance-lab.vercel.app) circuit sandbox, exposed as MCP
 tools. An agent can place components, wire their pins, and get back **real
 solved current** — not an estimate, and not a language model guessing at Ohm's
 law.

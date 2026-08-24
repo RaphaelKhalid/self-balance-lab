@@ -15,17 +15,20 @@ import { CreatorSim } from './sim/creator-sim.js';
 import { initDocSave } from './app/docsave.js';
 import { initInspector } from './app/inspector.js';
 import { initExamples } from './app/examples.js';
-import { initJarvis } from './app/jarvis.js';
+import { initHephaestus } from './app/hephaestus.js';
 import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
 import { initTopbar } from './app/topbar.js';
+import { initMobileUI } from './app/mobile.js';
 import { installErrorBoundary, isWebGLAvailable, showFatal } from './app/errors.js';
+import { migrateStorageKeys } from './app/storage.js';
 import { track, trackOnce, EVENTS, initAnalytics } from './app/analytics.js';
 import { initAccount } from './app/account.js';
 import { initClassroom } from './app/classroom.js';
 import { pullDocument, flushQueue, getProfile } from './app/cloud.js';
 
 installErrorBoundary();  // global error/rejection reporting + fatal fallback wiring
+migrateStorageKeys();    // carry pre-rename saved state onto the sbl-* keys (once)
 initAnalytics();         // attach the PostHog sink (privacy-locked; buffers until ready)
 if (!isWebGLAvailable()) {
   // 3D can't run at all — show the friendly fallback instead of a blank canvas.
@@ -94,7 +97,7 @@ if (benchScan.group) assemblyDecor.push(benchScan.group);
 // The modeled room is the default now that it's a PBR reconstruction (real
 // materials, glTF props, HDRI lighting) rather than the flat procedural stand-in
 // the capture used to beat; the toggle still swaps to the captured mesh.
-const ROOM_KEY = 'jarvis-room-mode';
+const ROOM_KEY = 'sbl-room-mode';
 // a stale 'scan' choice from before it was hidden must not leave a visitor on a
 // room that will never load — the persisted preference only counts when enabled.
 let roomIsScan = SCAN_ENABLED && localStorage.getItem(ROOM_KEY) === 'scan';
@@ -212,21 +215,21 @@ const coach = initCoach(api);
 // Example-circuit gallery — scripted builds (incl. the candle/thermistor and
 // photoresistor "physical input" demos) loaded through the same API.
 initExamples({ api, hud, exitSim: () => exitSim() });
-// Jarvis: natural-language build assistant (M2). Acts only through the API.
+// Hephaestus: natural-language build assistant (M2). Acts only through the API.
 // Free/anon users are quota-capped (protects the shared Gemini free key); pro
 // (profiles.tier) is uncapped. currentTier is updated on sign-in below.
 let currentTier = 'free';
-const jarvis = initJarvis({
+const hephaestus = initHephaestus({
   api,
   onFlash: (m, k) => hud.flash(m, k),
   getTier: () => currentTier,
-  onUpgrade: () => { track('upgrade_click', { from: 'jarvis' }); hud.flash('Upgrade for unlimited Jarvis — coming soon', 'ok'); },
+  onUpgrade: () => { track('upgrade_click', { from: 'hephaestus' }); hud.flash('Upgrade for unlimited Hephaestus — coming soon', 'ok'); },
 });
 {
-  const jv = document.getElementById('jarvis');
-  document.getElementById('jarvis-toggle')?.addEventListener('click', () => {
-    jv?.classList.toggle('collapsed');
-    if (!jv?.classList.contains('collapsed')) document.getElementById('jarvis-input')?.focus();
+  const panel = document.getElementById('hephaestus');
+  document.getElementById('hephaestus-toggle')?.addEventListener('click', () => {
+    panel?.classList.toggle('collapsed');
+    if (!panel?.classList.contains('collapsed')) document.getElementById('hephaestus-input')?.focus();
   });
 }
 
@@ -235,6 +238,34 @@ document.getElementById('help-btn')?.addEventListener('click', () => {
   coach?.reopen?.();
   document.getElementById('overlay')?.classList.remove('hidden');
 });
+
+// ── phone shell ─────────────────────────────────────────────────
+// Below 820px the three-column cockpit becomes a full-bleed bench + a bottom
+// sheet + a RUN bar (js/app/mobile.js). The layout changes the canvas' size, so
+// every transition re-runs resize() and re-frames the bench for the new aspect.
+const mobileUI = initMobileUI({
+  onLayoutChange: (reason) => requestAnimationFrame(() => {
+    resize();
+    // only a real layout swap changes the canvas' shape — re-framing on every
+    // sheet toggle would throw away wherever the user had orbited to
+    if ((reason === 'enter' || reason === 'leave') && state.mode === 'assembly') frameBench();
+  }),
+});
+window.__mobile = mobileUI;
+
+// The legend teaches mouse verbs (right-click, R, scroll) that don't exist on a
+// touch screen. Coarse pointers get the gestures creator-assembly actually
+// implements for them, and the card fades out once the first part is down.
+if (window.matchMedia?.('(pointer: coarse)').matches && controlsLegend) {
+  controlsLegend.innerHTML = `
+    <div class="lg-title">CONTROLS</div>
+    <div><b>Drag</b> a part in from Parts · <b>drag</b> a placed part to move</div>
+    <div><b>Tap</b> a pin, then its target pin, to wire them</div>
+    <div><b>Press and hold</b> a part or wire to remove · <b>double-tap</b> to rotate</div>`;
+  window.addEventListener('bench:placed', () => {
+    setTimeout(() => controlsLegend.classList.add('faded'), 1200);
+  }, { once: true });
+}
 
 // ── share build ─────────────────────────────────────────────────
 document.getElementById('share-btn').addEventListener('click', async () => {
@@ -255,12 +286,12 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 for (const btn of document.querySelectorAll('.panel-min')) {
   btn.addEventListener('click', () => document.getElementById(btn.dataset.panel)?.classList.toggle('min'));
 }
-window.__lab = { assemblyApi, api, hud, jarvis };   // debug/testing hook
+window.__lab = { assemblyApi, api, hud, hephaestus };   // debug/testing hook
 track(EVENTS.LOAD);   // funnel entry — app booted
 
 // ── cloud account + sync ─────────────────────────────────────────
 // Lesson/progress sync was removed in the pivot; only the build document
-// (kind:'save') syncs now. profiles.tier is still read (Jarvis quota later).
+// (kind:'save') syncs now. profiles.tier is still read (Hephaestus quota later).
 // The classroom shell stays dormant (teams/edu payer path).
 const classroom = initClassroom();
 const account = initAccount({
@@ -270,7 +301,7 @@ const account = initAccount({
     try {
       const prof = await getProfile();
       currentTier = (prof && prof.tier) || 'free';
-      account.setTier(currentTier);   // Jarvis quota lifts for pro
+      account.setTier(currentTier);   // Hephaestus quota lifts for pro
       // pull the build document (kind:'save'); load it if it's a v2 RobotDoc
       const rs = await pullDocument('save', 0);
       if (rs && rs.v === 2 && Array.isArray(rs.components)) api.loadDocument(rs);
@@ -289,8 +320,8 @@ document.getElementById('overlay-start')?.addEventListener('click', dismissOverl
 document.getElementById('overlay-tour')?.addEventListener('click', () => {
   dismissOverlay();
   // second CTA opens the assistant — the fastest path past a blank bench
-  document.getElementById('jarvis')?.classList.remove('collapsed');
-  document.getElementById('jarvis-input')?.focus();
+  document.getElementById('hephaestus')?.classList.remove('collapsed');
+  document.getElementById('hephaestus-input')?.focus();
 });
 
 // ── upload / simulation ─────────────────────────────────────────
@@ -356,10 +387,38 @@ function exitSim() {
   canvas.style.cursor = 'crosshair';
   controlsLegend.classList.remove('hidden');
   controls.enabled = true;
-  controls.target.set(4, 0, 2);
-  camera.position.set(34, 80, 93);
-  camera.fov = 55; camera.updateProjectionMatrix();
+  frameBench();
   hud.simHud.classList.add('hidden');
+}
+
+// Frame the bench, and keep that framing honest across aspect ratios.
+//
+// This is the one place the bench camera is composed, so exitSim(), boot and the
+// phone-shell layout swap all land on the same shot. A perspective camera's
+// *horizontal* field of view shrinks with the aspect ratio, so a viewport much
+// narrower than it is tall crops the bench; past that point the camera backs off
+// along the same view axis (and the dolly limit lifts with it, or OrbitControls
+// would clamp the pull straight back out). The threshold is deliberately below
+// a phone's portrait aspect — measured on a 390×618 canvas the stock shot still
+// frames the whole bench, and pulling back there only made the parts small.
+const BENCH_TARGET = { x: 4, y: 0, z: 2 };
+const BENCH_EYE = { x: 34, y: 80, z: 93 };
+const BENCH_BASE = Math.hypot(BENCH_EYE.x - BENCH_TARGET.x, BENCH_EYE.y - BENCH_TARGET.y, BENCH_EYE.z - BENCH_TARGET.z);
+function frameBench() {
+  const aspect = camera.aspect || 1;
+  const pull = Math.min(1.35, Math.max(1, 0.55 / aspect));
+  const dist = BENCH_BASE * pull;
+  controls.target.set(BENCH_TARGET.x, BENCH_TARGET.y, BENCH_TARGET.z);
+  camera.position.set(
+    BENCH_TARGET.x + ((BENCH_EYE.x - BENCH_TARGET.x) / BENCH_BASE) * dist,
+    BENCH_TARGET.y + ((BENCH_EYE.y - BENCH_TARGET.y) / BENCH_BASE) * dist,
+    BENCH_TARGET.z + ((BENCH_EYE.z - BENCH_TARGET.z) / BENCH_BASE) * dist,
+  );
+  controls.maxDistance = Math.max(175, dist * 1.2);
+  camera.fov = 55;
+  camera.updateProjectionMatrix();
+  camera.lookAt(controls.target.x, controls.target.y, controls.target.z);
+  controls.update();
 }
 
 // ── render loop ─────────────────────────────────────────────────
@@ -389,4 +448,5 @@ function animate() {
 }
 animate();
 resize();
+frameBench();   // compose the bench for whatever aspect this device actually has
 

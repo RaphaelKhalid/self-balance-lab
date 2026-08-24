@@ -106,7 +106,7 @@ test('the onboarding coach appears and advances as the circuit is built', async 
   await page.goto('/');
   await page.waitForFunction(() => !!window.__api, null, { timeout: 20_000 });
   await page.evaluate(() => {
-    try { localStorage.removeItem('jarvis-coached'); localStorage.setItem('sbl-seen', '1'); } catch {}
+    try { localStorage.removeItem('sbl-coached'); localStorage.setItem('sbl-seen', '1'); } catch {}
     window.location.reload();
   });
   await page.waitForFunction(() => !!window.__api, null, { timeout: 20_000 });

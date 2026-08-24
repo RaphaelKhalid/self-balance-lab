@@ -1,7 +1,7 @@
 {
-  "name": "jarvis",
+  "name": "selfbalance-lab",
   "version": "1.0.0",
-  "description": "Jarvis — a browser robotics creator space. Build a robot from real components, wire the circuit, and watch a Rapier physics simulation run it. A natural-language assistant (Gemini) drives the same scriptable API the UI does.",
+  "description": "SelfBalance Lab — a browser robotics creator space. Build a robot from real components, wire the circuit, and watch a Rapier physics simulation run it. A natural-language assistant (Gemini) drives the same scriptable API the UI does.",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
