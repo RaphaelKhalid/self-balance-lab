@@ -14,7 +14,7 @@ import { emptyDoc } from './model/doc.js';
 import { CreatorSim } from './sim/creator-sim.js';
 import { initDocSave } from './app/docsave.js';
 import { initInspector } from './app/inspector.js';
-import { initExamples } from './app/examples.js';
+import { initExamples, EXAMPLES } from './app/examples.js';
 import { initHephaestus } from './app/hephaestus.js';
 import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
@@ -157,7 +157,14 @@ const api = createApi({
   hooks: {
     // any document change (drag, wire, clear, undo, redo, a script, a #build=
     // load) re-syncs the 3D view — the doc is the single source of truth.
-    onDocChange: () => { assemblyApi?.sync(); topbar?.refreshChip(); checkActivation(); },
+    // The checklist used to refresh only from creator-assembly's own pointer
+    // handlers, so a build that arrived any other way — a seeded cold open, a
+    // #build= link, a Hephaestus tool call, undo/redo — left the CONNECTIONS panel
+    // showing its 'place all parts' placeholder over a fully wired circuit.
+    // Hanging it here means it follows the document, like everything else.
+    onDocChange: () => {
+      assemblyApi?.sync(); topbar?.refreshChip(); hud?.refreshChecklist(); checkActivation();
+    },
     sim: {
       run: () => enterSim(),
       stop: () => exitSim(),
@@ -183,9 +190,26 @@ window.__api = api;
 // reached by clicking around, which is exactly why it's the metric worth quoting.
 const SOURCE_TYPES = new Set(['battery']);
 const MIN_CURRENT = 1e-4;   // 0.1 mA — above solver noise, below any real load
+// The cold open (below) seeds a circuit that already solves, so on a first visit
+// the solver reports a working circuit before the visitor has touched anything.
+// That must NOT count as activation — the whole worth of this metric is that it
+// can only be reached by actually building something. So the seeded topology is
+// fingerprinted and the metric stays suppressed for exactly as long as the bench
+// still holds that untouched seed. Adding a part, wiring, deleting, or clearing
+// the board all change the fingerprint and arm the metric; merely turning the
+// seeded potentiometer's knob (a set_param, same topology) deliberately does not.
+let seedPrint = null;
+let seeding = false;    // true only while the cold open is laying the seed down
+function topologyPrint(doc) {
+  const comps = doc.components.map(c => `${c.id}:${c.type}`).sort().join(',');
+  const nets = doc.nets.map(n => [...n.endpoints].sort().join('|')).sort().join(';');
+  return `${comps}/${nets}`;
+}
 function checkActivation() {
   try {
+    if (seeding) return;
     const doc = api.get_document();
+    if (seedPrint !== null && topologyPrint(doc) === seedPrint) return;
     const e = api.read_electrical();
     if (!e || !e.ok) return;
     const loaded = doc.components.some(
@@ -209,12 +233,39 @@ const docSave = initDocSave(api, { onFlash: (m, k) => hud.flash(m, k) });
 // Inspector: read-only DOM view of the live document + electrical solve (the M1
 // replacement for the Guide rail). Polls the API; owns no state of its own.
 initInspector(api, { getMode: () => state.mode });
-// First-run onboarding coach — a 5-step build-your-first-circuit checklist that
-// advances by watching real API state; self-retires once done (persisted).
-const coach = initCoach(api);
 // Example-circuit gallery — scripted builds (incl. the candle/thermistor and
 // photoresistor "physical input" demos) loaded through the same API.
-initExamples({ api, hud, exitSim: () => exitSim() });
+const examples = initExamples({ api, hud, exitSim: () => exitSim() });
+
+// ── cold open ───────────────────────────────────────────
+// A first-time visitor used to land on an empty bench behind a welcome modal,
+// with the coach's checklist on top of that: two dismissals to reach a scene
+// where nothing was happening and nothing showed what the product does. If
+// there is no build to restore (no #build=, no save), seed a live one instead
+// — battery → potentiometer → motor, already solving, wheel already turning,
+// with a knob you can scroll to change the speed. The first interaction is
+// therefore "turn this and watch it react", which needs no instructions.
+// Anyone who wants the blank bench is one Clear board away.
+// The camera is not touched here: frameBench() at the end of boot composes the
+// same bench shot for every device, and the seeded circuit sits inside it.
+const coldOpened = api.get_document().components.length === 0 &&
+  (() => {
+    const demo = EXAMPLES.find(e => e.id === 'pot-dimmer');
+    if (!demo) return false;
+    seeding = true;
+    try { examples.load(demo, { silent: true }); } finally { seeding = false; }
+    return true;
+  })();
+// Fingerprint what the cold open put on the bench, so checkActivation() can tell
+// "the seed, untouched" from "a circuit this visitor built".
+if (coldOpened) seedPrint = topologyPrint(api.get_document());
+
+// First-run onboarding coach — a 5-step build-your-first-circuit checklist that
+// advances by watching real API state; self-retires once done (persisted).
+// Skipped on a cold open: its first four steps are already satisfied by the
+// seeded circuit, so it would open on "press RUN" with no context for what the
+// other steps were.
+const coach = coldOpened ? null : initCoach(api);
 // Hephaestus: natural-language build assistant (M2). Acts only through the API.
 // Free/anon users are quota-capped (protects the shared Gemini free key); pro
 // (profiles.tier) is uncapped. currentTier is updated on sign-in below.

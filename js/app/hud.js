@@ -72,10 +72,10 @@ export function initHud({ wiring, onExitSim, onReset }) {
     overlay.classList.add('hidden');
     try { localStorage.setItem('sbl-seen', '1'); } catch {}
   });
-  let seen = false;
-  try { seen = localStorage.getItem('sbl-seen') === '1'; } catch {}
-  // overlay starts hidden in markup (no flash on repeat visits); reveal for newcomers
-  if (!seen) overlay.classList.remove('hidden');
+  // The overlay is no longer an interstitial. A first-time visitor used to have
+  // to dismiss it (and then the coach) before touching anything, on top of an
+  // empty bench — two dismissals to reach nothing. main.js now cold-opens a live
+  // circuit instead, so the welcome is on-demand help: the ? button opens it.
 
   // ── RUN card ──────────────────────────────────────────────────
   // A doc-driven motor test: the Inspector shows solved current + ω, so all this
