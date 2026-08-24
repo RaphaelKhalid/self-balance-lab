@@ -1,4 +1,4 @@
-// The scriptable API — the one surface the UI, tests, and (Milestone 2) Jarvis
+// The scriptable API — the one surface the UI, tests, and (Milestone 2) Hephaestus
 // all drive. Every signature is shaped so a JSON-schema tool definition is a
 // mechanical transformation of it: flat named args, `{dryRun}` option, and a
 // uniform `{ok, changed, errors}` return for mutations.
@@ -111,7 +111,7 @@ export function createApi({ doc, hooks = {} } = {}) {
 
   // ── sim control (delegated to the physics binding) ─────────────
   // Async: starting the sim loads Rapier's WASM and builds bodies. Awaiting the
-  // hook means a caller (a test, Jarvis, a script) that does `await run_sim()`
+  // hook means a caller (a test, Hephaestus, a script) that does `await run_sim()`
   // is guaranteed the sim is actually running when it resolves, instead of
   // polling and hoping. Callers that ignore the promise behave as before.
   async function run_sim() {

@@ -106,7 +106,20 @@ test('the onboarding coach appears and advances as the circuit is built', async 
   await page.goto('/');
   await page.waitForFunction(() => !!window.__api, null, { timeout: 20_000 });
   await page.evaluate(() => {
-    try { localStorage.removeItem('jarvis-coached'); localStorage.setItem('sbl-seen', '1'); } catch {}
+    try {
+      localStorage.removeItem('sbl-coached');
+      localStorage.setItem('sbl-seen', '1');
+      // The cold open seeds a live circuit whenever there is nothing to restore,
+      // and deliberately skips the coach when it does (its first four steps would
+      // already be ticked). So park a saved build to suppress the cold open — the
+      // coach under test is the one a returning visitor gets, and the empty
+      // loadDocument below puts it back on step 1 regardless.
+      localStorage.setItem('gyro-doc-v2', JSON.stringify({
+        v: 2, robotId: 'self-balancer', name: 'saved', components: [
+          { id: 'keep1', type: 'battery', transform: { pos: [0, 1, 0], rot: [0, 0, 0] }, params: {} },
+        ], nets: [], code: null, sim: { gravity: -9.81, seed: 42 }, meta: { revision: 1 },
+      }));
+    } catch {}
     window.location.reload();
   });
   await page.waitForFunction(() => !!window.__api, null, { timeout: 20_000 });
@@ -188,4 +201,43 @@ test('the activation funnel fires circuit_ok exactly once, on the first working 
   expect(events.beforeLoop).toBe(0);   // an unclosed circuit is not activation
   expect(events.afterLoop).toBe(1);
   expect(events.total).toBe(1);
+});
+
+test('the cold-open seed does not count as activation, but building on it does', async ({ page }) => {
+  // The first visit now lands on a live battery→potentiometer→motor circuit that
+  // already solves. circuit_ok is the activation metric precisely because it can
+  // only be reached by building something, so the seed must not fire it — and a
+  // visitor who then builds on that seed must still be counted exactly once.
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.__api, null, { timeout: 20_000 });
+  await page.evaluate(() => {
+    try { localStorage.setItem('sbl-seen', '1'); } catch {}
+    document.getElementById('overlay-start')?.click();
+  });
+
+  // the cold open really did seed a working circuit
+  const seeded = await page.evaluate(() => ({
+    components: window.__api.get_document().components.length,
+    ok: window.__api.read_electrical()?.ok,
+  }));
+  expect(seeded.components).toBe(3);
+  expect(seeded.ok).toBe(true);
+
+  const funnel = () => page.evaluate(
+    () => (window.__gyroFunnel || []).filter(e => e.event === 'circuit_ok').length);
+
+  // a solving circuit nobody built is not activation
+  expect(await funnel()).toBe(0);
+  // neither is turning the seeded knob — same topology, no build step
+  await page.evaluate(() => window.__api.set_param({ id: 'pot1', param: 'resistance', value: 12 }));
+  expect(await funnel()).toBe(0);
+
+  // adding a part of their own arms it, and it fires once
+  await page.evaluate(() => {
+    const api = window.__api;
+    api.place_component({ type: 'led', id: 'led1' });
+    api.connect({ from: 'bat1.+', to: 'led1.A' });
+    api.connect({ from: 'bat1.-', to: 'led1.K' });
+  });
+  await expect.poll(funnel).toBe(1);
 });

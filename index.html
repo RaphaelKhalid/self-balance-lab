@@ -5,7 +5,7 @@
 <!-- viewport-fit=cover so the app can paint under the notch/home-indicator; user-scalable=no
      stops Safari's double-tap/pinch page-zoom from stealing 3D pinch/orbit gestures. -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>SelfBalance Lab — build electronics that actually work</title>
+<title>SelfBalance Lab — Robotics Creator</title>
 <meta name="description" content="Build a robot from real components in your browser, wire the circuit, and watch a physics simulation run it. A natural-language assistant builds alongside you. Zero install.">
 <!-- theme-color: dark UI chrome; media-scoped so a light-theme browser UI matches too -->
 <meta name="theme-color" content="#0a0d12" media="(prefers-color-scheme: dark)">
@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Jarvis">
+<meta name="apple-mobile-web-app-title" content="SelfBalance">
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="/favicon.svg">
 <link rel="canonical" href="https://selfbalance-lab.vercel.app/">
@@ -83,14 +83,14 @@
       <span class="dot"></span> INSPECTOR
     </header>
     <div id="inspector">
-      <p class="hint">Place a battery and a motor, wire them, then hit Upload to watch it spin.</p>
+      <p class="hint">Place a battery and a motor, wire them, then hit RUN to watch it spin.</p>
     </div>
   </aside>
 
   <!-- CENTER: 3D workspace -->
   <main id="workspace">
     <div id="workspace-hud">
-      <span id="hud-status" role="status" aria-live="polite">Drag parts from the tray onto the bench</span>
+      <span id="hud-status" role="status" aria-live="polite">Drag parts from the tray onto the chassis</span>
     </div>
     <!-- First-run coach: a 5-step "build your first circuit" checklist that
          advances by watching real app state. Hidden once completed (persisted). -->
@@ -113,14 +113,14 @@
     <!-- touch-action:none + inline overscroll guard so Safari never turns a 3D drag/orbit/pinch
      into page scroll or rubber-band; CSS agent can move this to the stylesheet later. -->
 <canvas id="three-canvas" style="touch-action:none; -webkit-user-select:none; user-select:none;"></canvas>
-    <!-- Jarvis: natural-language build assistant (M2). Talks to /api/jarvis;
+    <!-- Hephaestus: natural-language build assistant (M2). Talks to /api/hephaestus;
          acts only through window.__api. -->
-    <div id="jarvis" class="collapsed">
-      <button id="jarvis-toggle" aria-label="Toggle Jarvis"><i data-lucide="sparkles"></i><span>Jarvis</span></button>
-      <div id="jarvis-panel">
-        <div id="jarvis-log"><div class="jv-msg jv-bot">Hi — I'm Jarvis. Tell me what to build, e.g. “wire the battery to the motor and run it.”</div></div>
-        <form id="jarvis-form">
-          <input id="jarvis-input" type="text" placeholder="Ask Jarvis…" autocomplete="off" />
+    <div id="hephaestus" class="collapsed">
+      <button id="hephaestus-toggle" aria-label="Toggle Hephaestus"><i data-lucide="sparkles"></i><span>Hephaestus</span></button>
+      <div id="hephaestus-panel">
+        <div id="hephaestus-log"><div class="hp-msg hp-bot">Hi — I'm Hephaestus. Tell me what to build, e.g. “wire the battery to the motor and run it.”</div></div>
+        <form id="hephaestus-form">
+          <input id="hephaestus-input" type="text" placeholder="Ask Hephaestus…" autocomplete="off" />
           <button type="submit" aria-label="Send"><i data-lucide="arrow-up"></i></button>
         </form>
       </div>
@@ -135,7 +135,7 @@
       <span class="dot dot-green"></span> SIMULATE — <span id="firmware-file">battery → motor</span>
       <button class="panel-min" data-panel="right-panel" aria-label="Minimize panel" title="Minimize">▾</button>
     </header>
-    <div id="run-hint">Wire a <b>battery</b> to a <b>motor</b>, then hit <b>RUN</b> to drive it from the solved current. The Inspector shows current and speed live.</div>
+    <div id="run-hint">Place a <b>battery</b> and a <b>motor</b>, wire <span class="mono">+→A</span> and <span class="mono">−→B</span>, then hit <b>Run</b> to watch it spin. The Inspector (left) shows the solved current.</div>
     <button id="upload-btn"><i data-lucide="play"></i><span>RUN</span></button>
   </aside>
 
@@ -154,7 +154,7 @@
       <div class="ov-beat"><span class="ov-n">03</span><b>Run</b><p>Hit RUN and watch the current drive real physics.</p></div>
     </div>
     <button class="start" id="overlay-start">Start building →</button>
-    <button class="tour" id="overlay-tour">Or ask Jarvis to build it for you</button>
+    <button class="tour" id="overlay-tour">Or ask Hephaestus to build it for you</button>
   </div>
 </div>
 

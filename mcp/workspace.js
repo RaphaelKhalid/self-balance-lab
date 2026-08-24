@@ -1,4 +1,4 @@
-// The JARVIS tool layer, headless.
+// The SelfBalance Lab tool layer, headless.
 //
 // This is the whole point of the exercise: `js/api/index.js` (the app's single
 // mutation authority), `js/model/*` (the RobotDoc) and `js/sim/circuit.js` (the

@@ -1,7 +1,7 @@
 {
-  "name": "SelfBalance Lab",
+  "name": "SelfBalance Lab — Robotics Creator",
   "short_name": "SelfBalance",
-  "description": "Build electronics that actually work. Drag parts onto the bench, wire them pin to pin, and a real circuit solver and physics engine run what you built.",
+  "description": "Build a circuit from real components in your browser, wire it pin to pin, and watch a real solver and physics sim run it.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0d12",
