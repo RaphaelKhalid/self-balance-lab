@@ -1,6 +1,6 @@
 // Component library — pure metadata (no THREE). The single place that knows a
 // component type's pins, default electrical params, and pin roles. parts.js
-// (geometry) and circuit.js (physics) both defer to this so a Jarvis-authored
+// (geometry) and circuit.js (physics) both defer to this so a Hephaestus-authored
 // component and a hand-placed one are described identically.
 //
 // pin role: 'power+' | 'power-' | 'signal' | 'gnd'

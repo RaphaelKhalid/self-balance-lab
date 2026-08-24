@@ -3,7 +3,7 @@
 // A Patch is a small declarative op. `apply(doc, patches)` returns a NEW doc
 // (never mutates the input) plus the list of applied patches, so the caller can
 // push an entry onto the undo stack. Everything above this — the API, the UI,
-// eventually Jarvis — funnels through here, which is what makes undo/redo and
+// eventually Hephaestus — funnels through here, which is what makes undo/redo and
 // dry-run universal rather than per-feature.
 //
 // Patch ops:
