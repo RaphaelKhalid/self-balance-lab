@@ -646,13 +646,13 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 /* ── mobile: stack vertically ── */
 /* ── tablet / small-screen reflow (≤1024px incl. landscape iPad) ─── */
 @media (max-width: 1024px) {
-  #app {
+  body:not(.is-phone) #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 60vh auto;
     height: auto;
   }
-  body { overflow-y: auto; }
-  #workspace { height: 60vh; min-height: 340px; }
+  body:not(.is-phone) { overflow-y: auto; }
+  body:not(.is-phone) #workspace { height: 60vh; min-height: 340px; }
   /* the Guide rail is an overlay drawer here (default-collapsed via guide.js),
      so it never permanently occludes the 3D drag/wire area */
   #guide { max-width: min(340px, 88vw); background: var(--panel); }
@@ -676,18 +676,19 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 #left-panel.min, #right-panel.min { max-height: none; min-height: 0; flex: 0 0 auto; }
 .min > .panel-header .panel-min { transform: rotate(180deg); }
 
-/* ── phone reflow (≤600px): fill the viewport, workspace flexes, panels cap +
-   scroll internally and can be minimized to hand the screen to the robot ── */
+/* ── phone reflow (≤600px): the no-JS fallback.
+   js/app/mobile.js normally takes over below 820px (body.is-phone) and hands the
+   bench the whole screen; this stacked layout is what's left if that never runs. */
 @media (max-width: 600px) {
-  body { overflow: hidden; }
-  #app {
+  body:not(.is-phone) { overflow: hidden; }
+  body:not(.is-phone) #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(120px, 1fr) auto;
-    height: calc(100vh - 46px);
+    height: calc(100dvh - 46px);
   }
-  #workspace { height: auto; min-height: 120px; }
-  #left-panel, #right-panel { max-height: 40vh; overflow-y: auto; }
-  #sim-hud { width: min(240px, 80vw); font-size: 11px; top: 8px; right: 8px; }
+  body:not(.is-phone) #workspace { height: auto; min-height: 120px; }
+  body:not(.is-phone) #left-panel, body:not(.is-phone) #right-panel { max-height: 40vh; overflow-y: auto; }
+  body:not(.is-phone) #sim-hud { width: min(240px, 80vw); font-size: 11px; top: 8px; right: 8px; }
   #mission-hud { display: none; }
   #guide { max-width: 92vw; }
   #workspace-hud { max-width: calc(100% - 24px); font-size: 10.5px; }
@@ -1242,4 +1243,245 @@ html, body { overscroll-behavior: none; }
 @media (max-width: 1024px) {
   #examples-btn span:last-child { display: none; }   /* icon-only on tablets */
   #examples-btn { padding: 8px; }
+}
+
+/* ══ PHONE SHELL (≤820px, body.is-phone — see js/app/mobile.js) ═══════════════
+   The desktop cockpit is tray | bench | run panel. Stacked into three rows on a
+   phone that left the bench — the actual product — as a ~130px letterbox with
+   every floating overlay piled into it. So below 820px the bench goes
+   full-bleed, the panels become one bottom sheet (Parts / Circuit / Jarvis, one
+   at a time), and RUN moves into a fixed bottom bar. mobile.js moves the nodes;
+   everything here is layout only, and all of it is scoped to .is-phone so a
+   viewport that grows back to desktop width reverts cleanly. */
+#mobile-bar { display: none; }
+
+@media (max-width: 820px) {
+  body.is-phone {
+    --m-bar-h: 58px;
+    --m-safe-b: env(safe-area-inset-bottom, 0px);
+    --m-safe-t: env(safe-area-inset-top, 0px);
+    --m-sheet-h: min(56dvh, 460px);
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  /* iOS < 15.4 has no dvh: 100vh there is the *large* viewport, so the bottom of
+     the page (i.e. RUN) hides under Safari's toolbar. mobile.js publishes the
+     real visualViewport height as --app-h for exactly that case. */
+  @supports not (height: 100dvh) {
+    body.is-phone { height: var(--app-h, 100vh); }
+    body.is-phone { --m-sheet-h: min(56vh, 460px); }
+  }
+
+  /* ── top bar: compact, notch-safe, and the canvas' round buttons live here ── */
+  body.is-phone #topbar {
+    height: calc(46px + var(--m-safe-t));
+    padding: var(--m-safe-t) 8px 0;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  body.is-phone .tb-name { font-size: 15px; }
+  body.is-phone .tb-sub { display: none; }          /* "Robotics Creator" — brand only */
+  body.is-phone .tb-robot { padding: 4px 9px; font-size: 11px; max-width: 30vw; overflow: hidden; }
+  body.is-phone #tb-robot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body.is-phone .tb-actions { gap: 4px; }
+  body.is-phone .tb-actions #help-btn,
+  body.is-phone .tb-actions #sound-btn,
+  body.is-phone .tb-actions #share-btn {
+    position: static; width: 34px; height: 34px; border-radius: var(--r-sm);
+    background: transparent; backdrop-filter: none; flex-shrink: 0;
+  }
+  body.is-phone .tb-account { padding: 6px 10px; font-size: 11.5px; white-space: nowrap; flex-shrink: 0; }
+  body.is-phone .tb-account .acc-name { max-width: 72px; }
+
+  /* ── the bench owns the screen ── */
+  body.is-phone #app { display: block; position: relative; gap: 0; overflow: hidden; }
+  body.is-phone #workspace { position: absolute; inset: 0; height: auto; min-height: 0; }
+  body.is-phone #right-panel { display: none; }     /* its RUN button moved to the bar */
+  body.is-phone .panel-min { display: none; }       /* minimize is meaningless in a sheet */
+
+  /* ── bottom sheet (parts / circuit) ── */
+  body.is-phone #left-panel {
+    position: fixed; left: 0; right: 0; z-index: 60;
+    bottom: calc(var(--m-bar-h) + var(--m-safe-b));
+    height: var(--m-sheet-h); max-height: var(--m-sheet-h);
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--panel);
+    border-top: 1px solid var(--border-2);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -14px 44px rgba(0, 0, 0, 0.5);
+    transform: translateY(calc(100% + var(--m-bar-h) + var(--m-safe-b)));
+    visibility: hidden;
+    transition: transform var(--t-med, .24s) var(--ease-out), visibility 0s .24s;
+  }
+  body.is-phone.sheet-open[data-sheet="parts"] #left-panel,
+  body.is-phone.sheet-open[data-sheet="circuit"] #left-panel {
+    transform: none; visibility: visible;
+    transition: transform var(--t-med, .24s) var(--ease-out), visibility 0s 0s;
+  }
+  /* one group at a time; each scrolls on its own */
+  body.is-phone #left-panel .m-group { display: none; flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: 10px; }
+  body.is-phone[data-sheet="parts"] #left-panel .m-group[data-mgroup="parts"],
+  body.is-phone[data-sheet="circuit"] #left-panel .m-group[data-mgroup="circuit"] { display: block; }
+  /* inside a sheet the sub-regions size to content — the desktop 3:1:3 flex
+     split would fight the sheet's own scroll */
+  body.is-phone #left-panel #parts-tray,
+  body.is-phone #left-panel #checklist,
+  body.is-phone #left-panel #inspector { flex: none; overflow: visible; }
+  body.is-phone #left-panel .panel-header { position: sticky; top: 0; z-index: 2; background: var(--panel); }
+
+  .m-handle {
+    flex: 0 0 auto; width: 100%; height: 28px; position: relative;
+    background: none; border: 0; padding: 0; cursor: pointer; touch-action: none;
+  }
+  .m-handle::before {
+    content: ""; position: absolute; left: 50%; top: 11px; margin-left: -21px;
+    width: 42px; height: 4px; border-radius: 999px; background: var(--border-2);
+  }
+  .m-handle:active::before { background: var(--accent); }
+
+  /* ── the fixed bottom bar: sheet tabs + RUN ── */
+  body.is-phone #mobile-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    display: flex; align-items: stretch; gap: 6px;
+    padding: 6px 8px calc(6px + var(--m-safe-b));
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.35);
+  }
+  body.is-phone #mobile-bar .m-tab {
+    flex: 1 1 0; min-height: 46px; min-width: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: transparent; border: 1px solid transparent; border-radius: var(--r);
+    color: var(--text-dim); font-family: var(--ui); font-size: 10.5px; letter-spacing: .04em;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  body.is-phone #mobile-bar .m-tab.is-open {
+    color: var(--accent); background: var(--accent-soft); border-color: var(--accent-dim);
+  }
+  body.is-phone #mobile-bar #upload-btn {
+    flex: 1.4 1 0; min-height: 46px; margin: 0; padding: 10px; width: auto; gap: 7px;
+    font-size: 12.5px; animation: none;
+  }
+  body.is-phone.mode-sim #mobile-bar { display: none; }   /* RUN mode: sim card owns the edge */
+
+  /* ── overlays above the bar ── */
+  body.is-phone #workspace-hud {
+    bottom: calc(var(--m-bar-h) + var(--m-safe-b) + 10px);
+    max-width: calc(100% - 16px); font-size: 11px;
+  }
+  body.is-phone #controls-legend {
+    left: 8px; right: 8px; bottom: calc(var(--m-bar-h) + var(--m-safe-b) + 44px);
+    font-size: 10.5px; line-height: 1.55; text-align: center;
+    transition: opacity var(--t-med) var(--ease-out);
+  }
+  body.is-phone #controls-legend.faded { opacity: 0; }
+  body.is-phone #sim-hud {
+    top: auto; left: 12px; right: 12px; width: auto;
+    bottom: calc(12px + var(--m-safe-b));
+  }
+  body.is-phone #sim-hud .sim-buttons button { min-height: 44px; }
+  /* The coach is a five-step checklist with a hint under each line — on a phone
+     that card covered the entire bench. Keep the step list (progress is the
+     point) but only the step you're on carries its hint. */
+  body.is-phone #coach {
+    top: calc(var(--m-safe-t) + 54px); left: 8px; right: 8px; transform: none;
+    width: auto; padding: 11px 12px; font-size: 12.5px;
+    max-height: 42dvh; overflow-y: auto;
+    /* the desktop entrance animates translate(-50%) — with fill:both it pins the
+       card half a screen to the left of a full-width sheet, so swap the tween */
+    animation: fade-in var(--t-slow) var(--ease-out) both;
+  }
+  body.is-phone #coach-steps li:not(.current) .coach-hint { display: none; }
+  body.is-phone #coach-steps li:not(.current) { font-size: 12px; padding: 2px 4px; }
+  body.is-phone .coach-nudge { font-size: 11.5px; }
+  body.is-phone #coach-chip { top: calc(var(--m-safe-t) + 54px); }
+  body.is-phone #examples-btn, body.is-phone #room-toggle { top: 10px; right: 10px; min-height: 36px; }
+  body.is-phone #room-toggle { top: 52px; }
+
+  /* ── Jarvis: a sheet like the others, driven by the bar's tab ── */
+  body.is-phone #jarvis {
+    position: fixed; left: 8px; right: 8px; z-index: 60;
+    bottom: calc(var(--m-bar-h) + var(--m-safe-b) + 8px);
+    align-items: stretch;
+  }
+  body.is-phone #jarvis-toggle { display: none; }        /* the bar tab replaces the pill */
+  body.is-phone #jarvis-panel { width: auto; }
+  body.is-phone #jarvis-log { max-height: 38dvh; }
+  body.is-phone #jarvis-input { font-size: 16px; }       /* < 16px makes iOS zoom the page */
+  body.is-phone #jarvis-form button { width: 44px; min-height: 44px; }
+
+  /* ── touch targets + touch-friendly tray ──
+     .part-card needs touch-action:none or the sheet's own scroll swallows the
+     drag that places a part — the single biggest "nothing works on my phone". */
+  body.is-phone .part-card { padding: 13px 14px; touch-action: none; }
+  body.is-phone .part-card .part-desc { font-size: 11.5px; }
+  body.is-phone .part-card .help-icon { width: 26px; height: 26px; bottom: 6px; right: 8px; font-size: 12px; }
+  body.is-phone .tray-search { font-size: 16px; min-height: 42px; }
+  body.is-phone .tray-chip { min-height: 34px; padding: 6px 13px; }
+  body.is-phone #clear-btn, body.is-phone .auto-btn { min-height: 44px; }
+  body.is-phone .insp-pfield input[type=number] { min-height: 34px; width: 68px; font-size: 16px; }
+  /* popovers and panels anchored to a desktop corner get phone-width instead */
+  body.is-phone .acc-popover,
+  body.is-phone #examples-panel {
+    top: calc(var(--m-safe-t) + 52px); left: 8px; right: 8px; width: auto;
+    max-height: min(62dvh, 460px);
+  }
+  body.is-phone #classroom-panel { padding: 10px; }
+  body.is-phone .cr-card { max-height: 86dvh; }
+  body.is-phone .cr-body { padding: 14px; }
+  body.is-phone #coach-dismiss, body.is-phone #coach-min { min-width: 34px; min-height: 34px; }
+
+  /* hover styling is meaningless on touch and leaves cards stuck "lifted" */
+  @media (hover: none) {
+    .part-card:hover { transform: none; box-shadow: var(--shadow-1), var(--edge-hi); }
+  }
+
+  /* ── onboarding card: the three beats stack instead of squeezing ── */
+  #overlay .card { padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: 92dvh; overflow-y: auto; }
+  #overlay h1 { font-size: 25px; }
+  #overlay .ov-beats { flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  #overlay .ov-beat { padding: 10px 12px; }
+  #overlay .ov-beat b { display: inline; margin: 0 0 0 8px; }
+  #overlay .ov-beat p { margin-top: 4px; }
+  #overlay .start, #overlay .tour { min-height: 48px; }
+}
+
+/* ── phone in landscape ───────────────────────────────────────
+   A phone on its side has ~340px of height, so a bottom sheet at 56dvh leaves
+   almost no bench and the bar eats the rest. The sheet becomes a side drawer
+   there instead, and the notch moves to the side, so the insets follow it. */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  body.is-phone {
+    --m-bar-h: 50px;
+    --m-safe-l: env(safe-area-inset-left, 0px);
+    --m-safe-r: env(safe-area-inset-right, 0px);
+  }
+  body.is-phone #topbar { padding-left: max(8px, var(--m-safe-l)); padding-right: max(8px, var(--m-safe-r)); }
+  body.is-phone #left-panel {
+    top: calc(46px + var(--m-safe-t)); bottom: calc(var(--m-bar-h) + var(--m-safe-b));
+    left: var(--m-safe-l); right: auto;
+    width: min(330px, 62vw); height: auto; max-height: none;
+    border-radius: 0 18px 18px 0;
+    box-shadow: 14px 0 44px rgba(0, 0, 0, 0.5);
+    transform: translateX(calc(-100% - var(--m-safe-l)));
+  }
+  body.is-phone.sheet-open[data-sheet="parts"] #left-panel,
+  body.is-phone.sheet-open[data-sheet="circuit"] #left-panel { transform: none; }
+  /* the handle reads as a grab bar on the drawer's inner edge */
+  body.is-phone #left-panel .m-handle { height: 22px; }
+  body.is-phone #left-panel .m-handle::before { width: 34px; top: 9px; }
+  body.is-phone #mobile-bar { padding-left: max(8px, var(--m-safe-l)); padding-right: max(8px, var(--m-safe-r)); }
+  body.is-phone #mobile-bar .m-tab { min-height: 40px; flex-direction: row; gap: 6px; }
+  body.is-phone #mobile-bar #upload-btn { min-height: 40px; }
+  body.is-phone #coach {
+    top: calc(var(--m-safe-t) + 52px); left: auto; right: 10px; width: min(320px, 52vw);
+    max-height: calc(100dvh - var(--m-bar-h) - var(--m-safe-t) - 70px); overflow-y: auto;
+  }
+  /* only the step you're on: five rows don't fit beside a landscape bench */
+  body.is-phone #coach-steps li:not(.current) { display: none; }
+  body.is-phone #jarvis { left: auto; right: 10px; width: min(360px, 56vw); }
+  body.is-phone #controls-legend { display: none; }   /* no room; the coach carries it */
 }

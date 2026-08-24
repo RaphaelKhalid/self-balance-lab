@@ -12,23 +12,36 @@ const SEEN_KEY = 'jarvis-coached';
 // Each step: a short label, an optional one-line hint, and a predicate over
 // { doc, elec, mode }. Steps are checked in order; the first not-yet-done step
 // is the "current" one and shows its hint.
+// `hint` is written for the desktop cockpit (tray on the left, RUN top right);
+// `hintTouch` is the same step as a phone actually presents it — the panels are
+// a bottom sheet there and RUN lives in the bottom bar, so the desktop wording
+// sends people looking at the wrong edge of their screen.
 const STEPS = [
   { label: 'Drag a battery onto the bench',
     hint: 'Grab it from the parts tray on the left.',
+    hintTouch: 'Open Parts (bottom bar) and drag the battery up onto the bench.',
     done: ({ doc }) => hasType(doc, 'battery') },
   { label: 'Drag a motor onto the bench',
     hint: 'One more part from the tray — the motor is what spins.',
+    hintTouch: 'One more from Parts — the motor is what spins.',
     done: ({ doc }) => hasType(doc, 'motor') },
   { label: 'Wire battery + to the motor',
     hint: 'Click the battery + pin, then a motor pin to join them.',
+    hintTouch: 'Tap the battery + pin, then a motor pin, to join them.',
     done: ({ doc }) => wired(doc, 'power+', 'motor') },
   { label: 'Close the loop so current flows',
     hint: 'Wire battery − back to the motor. The Inspector will show current.',
+    hintTouch: 'Wire battery − back to the motor. Circuit (bottom bar) shows the current.',
     done: ({ elec }) => currentFlows(elec) },
   { label: 'Press RUN to watch it spin',
     hint: 'Hit RUN (top right) to drop into the physics sim.',
+    hintTouch: 'Hit RUN (bottom right) to drop into the physics sim.',
     done: ({ mode }) => mode === 'sim' },
 ];
+
+// coarse pointer ⇒ phone/tablet wording
+const TOUCH = (() => { try { return window.matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
+const hintFor = (s) => (TOUCH && s.hintTouch) || s.hint || '';
 
 // is a battery power pin (+/−) on the same net as any motor pin?
 function wired(doc, role, targetType) {
@@ -68,7 +81,7 @@ export function initCoach(api) {
        <span class="coach-check">○</span>
        <span class="coach-body">
          <span class="coach-label">${s.label}</span>
-         <span class="coach-hint">${s.hint || ''}</span>
+         <span class="coach-hint">${hintFor(s)}</span>
        </span>
      </li>`).join('');
 

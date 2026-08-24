@@ -14,6 +14,7 @@ export default [
         performance: 'readonly', console: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly',
         setInterval: 'readonly', clearInterval: 'readonly', fetch: 'readonly',
         AudioContext: 'readonly', OscillatorNode: 'readonly', CustomEvent: 'readonly',
+        PointerEvent: 'readonly', MouseEvent: 'readonly',
         CodeMirror: 'readonly', ResizeObserver: 'readonly', URL: 'readonly',
         process: 'readonly', Buffer: 'readonly',
       },

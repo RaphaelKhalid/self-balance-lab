@@ -318,3 +318,44 @@ footer .fine { font-size: 12.5px; width: 100%; color: var(--text-dim); opacity: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ── phones ────────────────────────────────────────────
+   The grids already collapse to one column; what a 390px screen still needed
+   was air (desktop section padding is most of a phone screen), safe-area gutters
+   so a notch can't clip the copy in landscape, tap targets that clear 44px, and
+   nav links that stay reachable instead of vanishing. */
+.wrap {
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+
+@media (max-width: 640px) {
+  /* the section links stay hidden here (the footer carries them); what matters
+     is that the one CTA never gets pushed off the edge */
+  .nav .wrap { gap: 10px; height: 56px; }
+  .nav-links .btn { margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+
+  section { padding: 48px 0; }
+  .hero { padding: 44px 0 40px; }
+  h1.headline { margin-top: 18px; max-width: none; }
+  .subhead { margin-top: 16px; font-size: 1.02rem; }
+  .hero-cta { margin-top: 24px; gap: 10px; }
+  .hero-cta .btn { flex: 1 1 100%; }        /* full-width, thumb-sized CTAs */
+  .hero-meta { margin-top: 16px; gap: 10px 16px; font-size: 13px; }
+  .hero-visual { margin-top: 34px; }
+  .hv-stage { min-height: 0; padding: 26px 16px; gap: 14px; }
+  .chip { min-width: 96px; padding: 13px 14px; }
+
+  .sec-head { margin-bottom: 30px; }
+  .sec-head p { font-size: 1rem; margin-top: 12px; }
+  .card { padding: 22px 20px; }
+  .card:hover { transform: none; }          /* :hover sticks after a tap */
+  .step { padding: 24px 20px 22px; }
+  .plan { padding: 26px 22px; }
+  .plan .price { font-size: 2.1rem; }
+  .cta-inner { padding: 38px 20px; }
+  .btn { min-height: 46px; }
+  footer { padding: 32px 0 max(32px, env(safe-area-inset-bottom)); }
+  footer nav { gap: 6px 14px; }
+  footer nav a { min-height: 40px; display: inline-flex; align-items: center; }
+}
