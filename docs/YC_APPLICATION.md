@@ -6,7 +6,7 @@ Synthesis of a three-way founder review (product/market, traction/GTM, tech/risk
 
 ## 1. What we're building (the one-liner)
 
-> **JARVIS is an AI-native electronics and robotics lab in the browser — describe what you want and watch it get built, wired, and simulated on a real circuit solver and real physics.**
+> **SelfBalance Lab is an AI-native electronics and robotics lab in the browser — describe what you want and watch it get built, wired, and simulated on a real circuit solver and real physics.**
 
 Rejected alternatives and why:
 
@@ -64,7 +64,7 @@ The wedge is real because an intro-electronics lab is the most budget- and time-
 
 **The sharpest version of the architecture claim** (and it is one function call from being true):
 
-> Every LLM-driven design tool has the same failure mode: the model proposes an edit, the edit is wrong, and nobody knows until a human looks. JARVIS makes wrongness machine-checkable in the same turn. `dryRun` computes the post-edit document without committing it, and because `solveCircuit` is pure, we can solve the counterfactual. The agent can ask "if I wire this, does it short?" and get *physics* back, before the user sees anything.
+> Every LLM-driven design tool has the same failure mode: the model proposes an edit, the edit is wrong, and nobody knows until a human looks. SelfBalance Lab makes wrongness machine-checkable in the same turn. `dryRun` computes the post-edit document without committing it, and because `solveCircuit` is pure, we can solve the counterfactual. The agent can ask "if I wire this, does it short?" and get *physics* back, before the user sees anything.
 
 Today the loop is act-then-check. Propose-verify-commit is the moat. That gap is the 30-day build (§7).
 
@@ -72,7 +72,7 @@ Today the loop is act-then-check. Propose-verify-commit is the moat. That gap is
 
 1. **DC-only, and firmware is not executed.** The moment a user builds anything with a microcontroller — i.e. actual robotics — the simulation is a lie. *Mitigation: don't chase AC/transients; chase firmware execution* (an interpreted subset or an AVR8js-class emulator whose GPIO writes become `set_param` calls through the same API — a natural extension of the mutation-authority bet, not a separate system).
 2. **Silent numerical wrongness.** `solveLinear` is dense Gaussian and `continue`s on a singular column instead of flagging it; the diode loop can exhaust its iteration cap and return the last state with no violation raised. *Cheap fix: emit a `code:'unsolvable'` violation on singular pivots and non-convergence.* Turns silent wrongness into a UI message.
-3. **Gemini dependency + unbounded cost.** The free-tier quota gate is client-side localStorage — clear storage and it's gone. One motivated classroom exhausts the shared key and Jarvis dies for everyone. *Move the gate server-side into `api/jarvis.js` before any real traffic.*
+3. **Gemini dependency + unbounded cost.** The free-tier quota gate is client-side localStorage — clear storage and it's gone. One motivated classroom exhausts the shared key and Hephaestus dies for everyone. *Move the gate server-side into `api/hephaestus.js` before any real traffic.*
 4. **Perf on school iPads.** Two Rapier worlds, a bloom composer, a 400ms Inspector poll, and an O(n³) re-solve. *Memoize the solve on `doc.meta.revision`.*
 5. **CDN fragility.** Zero build step means one CDN outage is total downtime, with no integrity pinning. *Vendor the import map to a self-hosted `/vendor` — keeps zero-build, removes the third-party runtime dependency.*
 
@@ -84,7 +84,7 @@ Today the loop is act-then-check. Propose-verify-commit is the moat. That gap is
 
 Roughly a day of solver work (`history.commit` already returns the uncommitted doc; `solveCircuit` is already pure); the rest is the tool schema, the ghost render in `sync()`, and a spec asserting a proposed short is caught *before* commit.
 
-Why this one: in an interview you type "wire the LED straight to the battery," and Jarvis answers *"that draws 0.6 A through a 30 mA part — I'd add a 220 Ω resistor,"* having actually solved the counterfactual without touching the build. No other education-sim or LLM-CAD tool can do that. It converts the architecture from a claim into a live demo.
+Why this one: in an interview you type "wire the LED straight to the battery," and Hephaestus answers *"that draws 0.6 A through a 30 mA part — I'd add a 220 Ω resistor,"* having actually solved the counterfactual without touching the build. No other education-sim or LLM-CAD tool can do that. It converts the architecture from a claim into a live demo.
 
 ### The 30-day GTM (one thing)
 
@@ -100,21 +100,21 @@ Not a Show HN — that's a spike of anonymous bounces and one number you can't d
 - 25–35% — normal-good.
 - \> 45% unassisted — genuinely quotable.
 
-**The killer secondary stat is the split: FWC with Jarvis vs. without.** If Jarvis takes 20% → 60%, that single chart *is* the application.
+**The killer secondary stat is the split: FWC with Hephaestus vs. without.** If Hephaestus takes 20% → 60%, that single chart *is* the application.
 
 ### 30 / 60 / 90
 
 **Day 30**
-- [x] `connect_ok` / `circuit_ok` / `run_enter` / `jarvis_*` events shipped; funnel live
+- [x] `connect_ok` / `circuit_ok` / `run_enter` / `hephaestus_*` events shipped; funnel live
 - [ ] **Confirm the app loads on ≥3 real district networks / school iPads** — kill-criterion; if WebGL is filtered, the school GTM is dead and we need to know before applying, not after
-- [ ] Jarvis quota enforced server-side
+- [ ] Hephaestus quota enforced server-side
 - [ ] `propose()` shipped with the ghost-preview demo
 - [ ] 50 teacher emails sent; 10 sessions run; ≥200 unique first-time users
 - [ ] Baseline FWC measured; 20 teacher interviews logged verbatim
 
 **Day 60**
 - [ ] Top-2 FWC drop-offs fixed from real data
-- [ ] FWC ≥ 35%; Jarvis-assisted vs. unassisted delta quantified
+- [ ] FWC ≥ 35%; Hephaestus-assisted vs. unassisted delta quantified
 - [ ] 3 teachers return unprompted (retention — the only signal that matters)
 - [ ] **First money, by invoice** — 2 classrooms at $149
 - [ ] Share-loop k-factor measured; consumer thread kept or killed on that number

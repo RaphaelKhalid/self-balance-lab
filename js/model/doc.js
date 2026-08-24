@@ -8,7 +8,7 @@
 // Endpoint ids are "compId.pin". Nets are the connectivity graph; a wire is
 // just an edge, and nets are the connected components (union-find) of those
 // edges. This module is pure — no THREE, no DOM — so it is trivially testable
-// and is the exact schema a Jarvis tool call will emit.
+// and is the exact schema a Hephaestus tool call will emit.
 
 export const DOC_VERSION = 2;
 
