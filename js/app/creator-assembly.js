@@ -662,7 +662,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     if (res.ok) {
       audio.place(); trackOnce(EVENTS.PLACE, { type });
       // the phone shell listens for this to get its sheet out of the bench's way
-      window.dispatchEvent(new CustomEvent('jarvis:placed', { detail: { type } }));
+      window.dispatchEvent(new CustomEvent('bench:placed', { detail: { type } }));
     }
     sync();
     hud.setStatus(api.get_document().components.length >= 2

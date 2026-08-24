@@ -82,7 +82,7 @@ These come straight from the competitive teardown and map onto the `circuit_ok` 
 | D6 | **Violation event log** — a scrolling history of solver violations, not just current state. "You shorted it three seconds ago" is where the learning happens. | 3 |
 | D7 | **Schematic ⇄ 3D toggle** from the same document (PhET does this). Teachers need schematic literacy, students need the 3D. | 8 |
 | D8 | **`?embed=1` chromeless mode** for LMS/Google Sites iframes. Cheapest classroom feature that exists — no accounts needed. (CircuitVerse's growth channel.) | 2 |
-| D9 | **Expose RobotDoc as pasteable text**, the way Wokwi exposes `diagram.json`. Makes Jarvis auditable, enables copy-paste sharing, lets other LLMs author builds. | 3 |
+| D9 | **Expose RobotDoc as pasteable text**, the way Wokwi exposes `diagram.json`. Makes Hephaestus auditable, enables copy-paste sharing, lets other LLMs author builds. | 3 |
 
 ## E. Simulation credibility
 
@@ -105,11 +105,11 @@ These come straight from the competitive teardown and map onto the `circuit_ok` 
 |---|---|---|
 | F1 | **Split `creator-assembly.js` (1,151 lines, 11% of all JS).** It owns the tray, geometry factories, raycasting, wiring, the bench physics world, and the animation loop. Natural seams: `parts-factory.js` (FACTORY/CARD), `bench-physics.js` (the Rapier world), `wiring-view.js`. | 8 |
 | F2 | **Pin the CDN import map to exact versions** and consider vendoring to a self-hosted `/vendor`. Today one CDN outage is total downtime, with no integrity pinning — and version float is also the enemy of E1's determinism. | 4 |
-| F3 | **Move the Jarvis quota gate server-side** into `api/jarvis.js`. It's localStorage today: clearing storage bypasses it, and one motivated classroom exhausts the shared Gemini key for everyone. | 4 |
+| F3 | **Move the Hephaestus quota gate server-side** into `api/hephaestus.js`. It's localStorage today: clearing storage bypasses it, and one motivated classroom exhausts the shared Gemini key for everyone. | 4 |
 | F4 | **Memoize the circuit solve on `doc.meta.revision`.** The Inspector polls every 400 ms and re-runs an O(n³) dense solve each time. | 2 |
 | F5 | ~~Emit a violation on singular pivots and diode non-convergence~~ — **done 2026-08-03** (`190412c`). | ✅ |
 | F6 | ~~Delete assets orphaned by the pre-pivot removal~~ — **done 2026-08-03**, 7.5 MB. | ✅ |
-| F7 | Provider abstraction behind Jarvis. `TOOL_SCHEMAS` is already Anthropic-shaped with `geminiFunctionDeclarations()` as a derived view, so a second backend is a small file — worth having before the Gemini free tier becomes load-bearing. | 6 |
+| F7 | Provider abstraction behind Hephaestus. `TOOL_SCHEMAS` is already Anthropic-shaped with `geminiFunctionDeclarations()` as a derived view, so a second backend is a small file — worth having before the Gemini free tier becomes load-bearing. | 6 |
 
 ## G. Deliberately NOT doing
 
@@ -117,7 +117,7 @@ These come straight from the competitive teardown and map onto the `circuit_ok` 
 2. **No photoreal virtual breadboard.** Tinkercad's breadboard is its single biggest source of student failure (off-by-one rails, invisible internal connections) and it would obliterate 3D hit targets on touch. Our pin-to-pin abstraction is a feature — market it as one.
 3. **No USD/Omniverse, Isaac Lab, MuJoCo-WASM, RL pipelines, domain randomization, or closed-loop kinematics.** Overkill for a classroom product.
 4. **No multi-threaded WASM.** It needs SharedArrayBuffer + COOP/COEP headers, which break the CDN import map.
-5. **No URDF as a native format** — JARVIS's document is a circuit plus a placement bench; URDF has no concept of a net, a resistance or a diode, and adopting it natively would be cargo-culting credibility. *Import* via `urdf-loader` (Apache-2.0, Three.js-native) is worth it later purely as chassis content. Export is worth nothing: nobody would consume a JARVIS URDF.
+5. **No URDF as a native format** — SelfBalance Lab's document is a circuit plus a placement bench; URDF has no concept of a net, a resistance or a diode, and adopting it natively would be cargo-culting credibility. *Import* via `urdf-loader` (Apache-2.0, Three.js-native) is worth it later purely as chassis content. Export is worth nothing: nobody would consume a SelfBalance Lab URDF.
 6. **Don't chase Wokwi on breadth of firmware targets.** They have a multi-year head start on AVR/ESP32/RP2040 accuracy. One well-integrated ATmega328p that talks to our solver beats five half-emulated cores.
 
 ---

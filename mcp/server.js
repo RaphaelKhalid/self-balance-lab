@@ -1,4 +1,4 @@
-// JARVIS as an MCP server — the circuit sandbox, callable as tools.
+// SelfBalance Lab as an MCP server — the circuit sandbox, callable as tools.
 //
 // Wire a battery to a motor and get back the actual solved current; forget the
 // return leg and get back a floating-pin violation; short the battery and get
@@ -12,8 +12,8 @@ import { z } from 'zod';
 import { TOOLS, createWorkspace, runTool } from './workspace.js';
 
 const server = new MCPServer({
-  name: 'jarvis-circuits',
-  title: 'JARVIS Circuits',
+  name: 'selfbalance-circuits',
+  title: 'SelfBalance Lab Circuits',
   version: '1.0.0',
   description:
     'Build and solve real DC circuits. Place components, wire their pins, and '

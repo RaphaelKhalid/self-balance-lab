@@ -1,8 +1,8 @@
-// The Jarvis tool contract — the bridge between natural language and window.__api.
+// The Hephaestus tool contract — the bridge between natural language and window.__api.
 //
 // This is the ONE place the API surface is described as Anthropic tool schemas.
-// The Edge function (api/jarvis.js) sends TOOL_SCHEMAS to Claude; the client
-// agent loop (js/app/jarvis.js) maps each returned tool_use back onto the live
+// The Edge function (api/hephaestus.js) sends TOOL_SCHEMAS to Claude; the client
+// agent loop (js/app/hephaestus.js) maps each returned tool_use back onto the live
 // api via TOOL_EXECUTORS. Both import this, so the model can only ever call the
 // functions the app actually exposes — no bespoke command language.
 //
@@ -143,10 +143,10 @@ export function runTool(api, name, input) {
   }
 }
 
-// The system prompt that frames Jarvis for the model. Kept here so the client
-// and the Edge function agree on Jarvis's persona and guardrails.
+// The system prompt that frames Hephaestus for the model. Kept here so the client
+// and the Edge function agree on Hephaestus's persona and guardrails.
 export const SYSTEM_PROMPT = [
-  'You are Jarvis, a hands-on robotics build assistant embedded in a browser',
+  'You are Hephaestus, a hands-on robotics build assistant embedded in a browser',
   'circuit simulator. You help the user assemble and wire a robot by calling',
   'tools — you never invent a command syntax, you only call the provided tools.',
   '',
