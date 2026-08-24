@@ -18,6 +18,11 @@ async function openApp(page) {
     try { localStorage.setItem('sbl-seen', '1'); } catch { /* private mode */ }
     document.getElementById('overlay-start')?.click();
     document.getElementById('coach-dismiss')?.click();
+    // These are layout + gesture tests, not first-run tests: start from a bare
+    // bench so a tap or a long press is measured against parts the test placed,
+    // not against whatever the cold open seeded.
+    window.__api.loadDocument({ v: 2, robotId: 'self-balancer', name: 't', components: [], nets: [],
+      code: null, sim: { gravity: -9.81, seed: 42 }, meta: { revision: 0 } });
   });
   await page.waitForTimeout(400);
 }

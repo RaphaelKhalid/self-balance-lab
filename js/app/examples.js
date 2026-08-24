@@ -158,7 +158,7 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
   panel.querySelector('.ex-close').addEventListener('click', close);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 
-  function load(preset) {
+  function load(preset, { silent = false } = {}) {
     if (state.mode === 'sim') exitSim?.();
     // clear whatever's on the bench
     for (const c of api.get_document().components) api.remove_component({ id: c.id });
@@ -174,7 +174,7 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
       if (!r.ok) hud?.flash?.(`Couldn't place ${p.type}: ${r.errors?.[0] || ''}`, 'bad');
     });
     for (const [from, to] of preset.wires) api.connect({ from, to });
-    hud?.flash?.(`Loaded: ${preset.title}`, 'ok');
+    if (!silent) hud?.flash?.(`Loaded: ${preset.title}`, 'ok');
     if (preset.note) hud?.setStatus?.(preset.note);
     onLoad?.(preset);
     close();
