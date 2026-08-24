@@ -8,9 +8,9 @@ We are pivoting this repo. Read `CLAUDE.md` first, then this whole prompt before
 
 ## New product vision
 
-GYRO becomes a **browser robotics creator space**, not a lesson app. Users drag components into a 3D workspace, wire them with a **real simulated electrical model**, program them, and test them in physics. The headline feature is **Jarvis**: describe a robot in natural language and it gets scaffolded, wired, and programmed in the 3D space — and it can also explain, debug, and tune what you built. The fixed-robot, guided-curriculum product is over.
+SelfBalance Lab becomes a **browser robotics creator space**, not a lesson app. Users drag components into a 3D workspace, wire them with a **real simulated electrical model**, program them, and test them in physics. The headline feature is **Hephaestus**: describe a robot in natural language and it gets scaffolded, wired, and programmed in the 3D space — and it can also explain, debug, and tune what you built. The fixed-robot, guided-curriculum product is over.
 
-**Do not build Jarvis in this milestone.** Build the foundation it stands on.
+**Do not build Hephaestus in this milestone.** Build the foundation it stands on.
 
 ## Milestone 1 — thin end-to-end vertical slice
 
@@ -34,7 +34,7 @@ Build in this order. Do not write UI before the API it calls exists and is teste
 5. Physics binding — motor ω from solved torque, in `js/sim/`.
 6. **Only then** the UI: rewire drag/drop, wiring, and the Run button to call `window.__api`. The DOM layer must contain zero mutation logic.
 
-Milestone 2 (do not start) is `/api/jarvis` on Vercel Edge, streaming Claude with these tools as its tool schema. Design every signature so a JSON-schema tool definition is a mechanical transformation of it.
+Milestone 2 (do not start) is `/api/hephaestus` on Vercel Edge, streaming Claude with these tools as its tool schema. Design every signature so a JSON-schema tool definition is a mechanical transformation of it.
 
 ### RobotDoc v2 shape
 
@@ -67,10 +67,10 @@ Motor = `R_a` + `L_a` in series with a back-EMF source `V = Ke·ω`, where ω is
 - `js/app/guide.js` (the Guide rail, incl. its lesson-browser hosts)
 - `tests/curriculum.spec.js`
 - All lesson/track/star/badge/progress code paths in `js/app/save.js`, `js/app/cloud.js` (`kind:'progress'`), `js/app/hud.js` (checklist, mission HUD), and `js/app/classroom.js` (drop the per-student lesson-progress roster; **keep the class/roster shell and the Supabase schema dormant** — teams/edu is the intended payer).
-- Free/Pro lesson gating in `main.js` (`setTier` wiring). Keep the `profiles.tier` read; it'll gate Jarvis quota later.
+- Free/Pro lesson gating in `main.js` (`setTier` wiring). Keep the `profiles.tier` read; it'll gate Hephaestus quota later.
 
 **Keep, unchanged:**
-- `js/glossary.js` and all hover **tooltips** — this is the explanation layer Jarvis will extend. Tooltips stay.
+- `js/glossary.js` and all hover **tooltips** — this is the explanation layer Hephaestus will extend. Tooltips stay.
 - `js/scene.js`, `js/labels.js`, `js/assets.js`, `js/audio.js`, `js/app/topbar.js`, `js/app/touch.js`, `js/app/perf.js`, `js/app/quality.js`, `js/app/errors.js`, `js/app/analytics.js`, `js/app/input.js`, `js/app/account.js`, `js/app/cloud.js` (auth + `kind:'save'` sync only).
 
 **Refactor:**

@@ -15,18 +15,20 @@ import { CreatorSim } from './sim/creator-sim.js';
 import { initDocSave } from './app/docsave.js';
 import { initInspector } from './app/inspector.js';
 import { initExamples } from './app/examples.js';
-import { initJarvis } from './app/jarvis.js';
+import { initHephaestus } from './app/hephaestus.js';
 import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
 import { initTopbar } from './app/topbar.js';
 import { initMobileUI } from './app/mobile.js';
 import { installErrorBoundary, isWebGLAvailable, showFatal } from './app/errors.js';
+import { migrateStorageKeys } from './app/storage.js';
 import { track, trackOnce, EVENTS, initAnalytics } from './app/analytics.js';
 import { initAccount } from './app/account.js';
 import { initClassroom } from './app/classroom.js';
 import { pullDocument, flushQueue, getProfile } from './app/cloud.js';
 
 installErrorBoundary();  // global error/rejection reporting + fatal fallback wiring
+migrateStorageKeys();    // carry pre-rename saved state onto the sbl-* keys (once)
 initAnalytics();         // attach the PostHog sink (privacy-locked; buffers until ready)
 if (!isWebGLAvailable()) {
   // 3D can't run at all — show the friendly fallback instead of a blank canvas.
@@ -95,7 +97,7 @@ if (benchScan.group) assemblyDecor.push(benchScan.group);
 // The modeled room is the default now that it's a PBR reconstruction (real
 // materials, glTF props, HDRI lighting) rather than the flat procedural stand-in
 // the capture used to beat; the toggle still swaps to the captured mesh.
-const ROOM_KEY = 'jarvis-room-mode';
+const ROOM_KEY = 'sbl-room-mode';
 // a stale 'scan' choice from before it was hidden must not leave a visitor on a
 // room that will never load — the persisted preference only counts when enabled.
 let roomIsScan = SCAN_ENABLED && localStorage.getItem(ROOM_KEY) === 'scan';
@@ -213,21 +215,21 @@ const coach = initCoach(api);
 // Example-circuit gallery — scripted builds (incl. the candle/thermistor and
 // photoresistor "physical input" demos) loaded through the same API.
 initExamples({ api, hud, exitSim: () => exitSim() });
-// Jarvis: natural-language build assistant (M2). Acts only through the API.
+// Hephaestus: natural-language build assistant (M2). Acts only through the API.
 // Free/anon users are quota-capped (protects the shared Gemini free key); pro
 // (profiles.tier) is uncapped. currentTier is updated on sign-in below.
 let currentTier = 'free';
-const jarvis = initJarvis({
+const hephaestus = initHephaestus({
   api,
   onFlash: (m, k) => hud.flash(m, k),
   getTier: () => currentTier,
-  onUpgrade: () => { track('upgrade_click', { from: 'jarvis' }); hud.flash('Upgrade for unlimited Jarvis — coming soon', 'ok'); },
+  onUpgrade: () => { track('upgrade_click', { from: 'hephaestus' }); hud.flash('Upgrade for unlimited Hephaestus — coming soon', 'ok'); },
 });
 {
-  const jv = document.getElementById('jarvis');
-  document.getElementById('jarvis-toggle')?.addEventListener('click', () => {
-    jv?.classList.toggle('collapsed');
-    if (!jv?.classList.contains('collapsed')) document.getElementById('jarvis-input')?.focus();
+  const panel = document.getElementById('hephaestus');
+  document.getElementById('hephaestus-toggle')?.addEventListener('click', () => {
+    panel?.classList.toggle('collapsed');
+    if (!panel?.classList.contains('collapsed')) document.getElementById('hephaestus-input')?.focus();
   });
 }
 
@@ -260,7 +262,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches && controlsLegend) {
     <div><b>Drag</b> a part in from Parts · <b>drag</b> a placed part to move</div>
     <div><b>Tap</b> a pin, then its target pin, to wire them</div>
     <div><b>Press and hold</b> a part or wire to remove · <b>double-tap</b> to rotate</div>`;
-  window.addEventListener('jarvis:placed', () => {
+  window.addEventListener('bench:placed', () => {
     setTimeout(() => controlsLegend.classList.add('faded'), 1200);
   }, { once: true });
 }
@@ -284,12 +286,12 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 for (const btn of document.querySelectorAll('.panel-min')) {
   btn.addEventListener('click', () => document.getElementById(btn.dataset.panel)?.classList.toggle('min'));
 }
-window.__lab = { assemblyApi, api, hud, jarvis };   // debug/testing hook
+window.__lab = { assemblyApi, api, hud, hephaestus };   // debug/testing hook
 track(EVENTS.LOAD);   // funnel entry — app booted
 
 // ── cloud account + sync ─────────────────────────────────────────
 // Lesson/progress sync was removed in the pivot; only the build document
-// (kind:'save') syncs now. profiles.tier is still read (Jarvis quota later).
+// (kind:'save') syncs now. profiles.tier is still read (Hephaestus quota later).
 // The classroom shell stays dormant (teams/edu payer path).
 const classroom = initClassroom();
 const account = initAccount({
@@ -299,7 +301,7 @@ const account = initAccount({
     try {
       const prof = await getProfile();
       currentTier = (prof && prof.tier) || 'free';
-      account.setTier(currentTier);   // Jarvis quota lifts for pro
+      account.setTier(currentTier);   // Hephaestus quota lifts for pro
       // pull the build document (kind:'save'); load it if it's a v2 RobotDoc
       const rs = await pullDocument('save', 0);
       if (rs && rs.v === 2 && Array.isArray(rs.components)) api.loadDocument(rs);
@@ -318,8 +320,8 @@ document.getElementById('overlay-start')?.addEventListener('click', dismissOverl
 document.getElementById('overlay-tour')?.addEventListener('click', () => {
   dismissOverlay();
   // second CTA opens the assistant — the fastest path past a blank bench
-  document.getElementById('jarvis')?.classList.remove('collapsed');
-  document.getElementById('jarvis-input')?.focus();
+  document.getElementById('hephaestus')?.classList.remove('collapsed');
+  document.getElementById('hephaestus-input')?.focus();
 });
 
 // ── upload / simulation ─────────────────────────────────────────
