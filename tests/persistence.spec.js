@@ -48,8 +48,20 @@ test('a shared #build= URL restores the same document', async ({ page, context }
     return `${window.location.origin}${window.location.pathname}#build=${b64}`;
   });
 
+  // Drop the saved copy before opening the link. Same-origin pages share this
+  // context's localStorage, so leaving it in place meant the restored document
+  // could have come from the save rather than the URL — the assertion below
+  // could not tell a working #build= from a broken one.
+  await page.evaluate(() => { try { localStorage.removeItem('gyro-doc-v2'); } catch {} });
+  // Free this page's WebGL context before booting a second app in it. Under the
+  // software rasterizer a boot is expensive enough that holding two live scenes
+  // at once (on top of the config's 2 workers) pushed this test past its timeout
+  // — it was the standing CI failure, not a product bug.
+  await page.close();
+
   const fresh = await context.newPage();
   await openApp(fresh, shareUrl);
   const doc = await fresh.evaluate(() => window.__api.get_document());
   expect(doc.components.map(c => c.id).sort()).toEqual(['bat1', 'motor1']);
+  expect(doc.nets.length).toBe(2);
 });
