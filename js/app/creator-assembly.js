@@ -653,22 +653,49 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
     // drop point on the y=1 plane; the part spawns above it and falls onto the
     // bench under gravity, colliding with whatever's already there.
-    const pos = dropPoint(e) || [0, 1, 0];
+    // A release still over the phone's parts sheet — including a plain tap on a
+    // card, which is a drag of zero length — means "put this on the bench",
+    // aimed at nothing in particular. Spawn it in the clear instead of at the
+    // hidden point under the sheet.
+    const pos = (releasedOverSheet(e) ? benchSpawn() : dropPoint(e)) || benchSpawn();
     const res = api.place_component({ type, transform: { pos, rot: [0, 0, 0] } });
-    if (res.ok) { audio.place(); trackOnce(EVENTS.PLACE, { type }); }
+    if (res.ok) {
+      audio.place(); trackOnce(EVENTS.PLACE, { type });
+      // the phone shell listens for this to get its sheet out of the bench's way
+      window.dispatchEvent(new CustomEvent('jarvis:placed', { detail: { type } }));
+    }
     sync();
     hud.setStatus(api.get_document().components.length >= 2
-      ? 'Click a pin, then its target pin, to wire them'
+      ? `${TAP} a pin, then its target pin, to wire them`
       : 'Keep placing parts…');
     hud.refreshChecklist();
   }
+  // did the finger lift while still over the phone's parts sheet?
+  function releasedOverSheet(e) {
+    const sheet = document.querySelector('body.is-phone.sheet-open #left-panel');
+    if (!sheet) return false;
+    return e.clientY >= sheet.getBoundingClientRect().top - 8;
+  }
+  // An open spot on the bench, walked around a golden-angle spiral so tapping
+  // four parts in a row lays them out instead of stacking them in one pile.
+  let spawnN = 0;
+  function benchSpawn() {
+    const a = spawnN * 2.399963;                 // golden angle, in radians
+    const r = 5 + (spawnN % 5) * 2.6;
+    spawnN++;
+    return [4 + Math.cos(a) * r, 1, 2 + Math.sin(a) * r];
+  }
   const _plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1);
+  const DROP_LIMIT = BOUND - 3;   // inside the bench walls, whatever the ray says
   function dropPoint(e) {
     updatePointer(e);
     raycaster.setFromCamera(pointer, camera);
     const hit = new THREE.Vector3();
     if (!raycaster.ray.intersectPlane(_plane, hit)) return null;
-    return [hit.x, 1, hit.z];
+    // a ray aimed near the horizon lands hundreds of units away — off the bench,
+    // through the wall, out of frame. Keep every drop on the bench itself.
+    const clamp = (v) => Math.max(-DROP_LIMIT, Math.min(DROP_LIMIT, v));
+    return [clamp(hit.x), 1, clamp(hit.z)];
   }
 
   // XZ footprint half-extent per component — the box collider size that gives
@@ -798,7 +825,19 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
   }
-  const SNAP_PX = 26;
+  // A fingertip is ~9mm of contact against a pin drawn a couple of millimetres
+  // wide, so coarse pointers get a bigger screen-space snap radius. (Both paths
+  // still prefer an exact ray hit — the snap is only the fallback.)
+  const COARSE = (() => { try { return window.matchMedia('(pointer: coarse)').matches; } catch { return false; } })();
+  const SNAP_PX = COARSE ? 40 : 26;
+  // touch has no click, and no left-hand tray — say what the user actually does
+  const TAP = COARSE ? 'Tap' : 'Click';
+  const TRAY = COARSE ? 'Parts' : 'the tray';
+  // Which device produced the gesture currently in flight. A `click` carries no
+  // pointerType, so the preceding pointerdown records it — that, not a media
+  // query, is what decides whether a tap gets the touch gestures: a hybrid
+  // laptop should answer to both its trackpad and its screen.
+  let lastPointerType = 'mouse';
   const _pv = new THREE.Vector3();
   function pickPin() {
     const pinMeshes = [...endpoints.values()];
@@ -857,6 +896,8 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
   let hoveredCompId = null;   // whole part currently under the pointer (for R-rotate)
   canvas.addEventListener('pointermove', (e) => {
     if (state.mode !== 'assembly') return;
+    // a press that travels is a drag or an orbit, not a delete
+    if (longPress && Math.hypot(e.clientX - longPress.x, e.clientY - longPress.y) > LONG_PRESS_SLOP) cancelLongPress();
     updatePointer(e);
     raycaster.setFromCamera(pointer, camera);
 
@@ -930,26 +971,76 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     }
   }, { passive: false });
 
+  // "delete what's under the pointer" — a wire if one is under it, else the
+  // whole part. Bound to right-click on a mouse and to a long press on touch.
+  function removeUnderPointer() {
+    const wire = hoveredWire || raycaster.intersectObjects(wires.map(w => w.mesh), false)[0]?.object;
+    if (wire) {
+      const [a, b] = wire.userData.ids;
+      api.disconnect({ from: a, to: b });
+      hud.flash('Wire removed', 'ok'); audio.ui();
+      sync(); hud.refreshChecklist();
+      return true;
+    }
+    const id = pickComponent();
+    if (!id) return false;
+    api.remove_component({ id });
+    hud.flash(`Removed ${id}`, 'ok'); audio.ui();
+    sync(); hud.refreshChecklist();
+    return true;
+  }
+
+  // ── long press = remove (the touch stand-in for right-click) ──
+  // A phone has no second mouse button, so without this there is no way to take
+  // a part or a wire back off the bench. The press has to lose to a drag: any
+  // real finger travel cancels it, and if the press wins it also cancels the
+  // move-drag that pointerdown optimistically started.
+  const LONG_PRESS_MS = 500;
+  const LONG_PRESS_SLOP = 12;
+  let longPress = null;
+  function cancelLongPress() {
+    if (!longPress) return;
+    clearTimeout(longPress.timer);
+    longPress = null;
+  }
+  function startLongPress(e) {
+    cancelLongPress();
+    const { clientX, clientY } = e;
+    longPress = {
+      x: clientX, y: clientY,
+      timer: setTimeout(() => {
+        longPress = null;
+        if (state.mode !== 'assembly') return;
+        updatePointer({ clientX, clientY });
+        raycaster.setFromCamera(pointer, camera);
+        // drop the move-drag this press started before deleting its subject
+        if (moving) {
+          const body = phys?.bodies.get(moving.id);
+          if (body) body.setBodyType(phys.RAPIER.RigidBodyType.Dynamic, true);
+          moving = null;
+          canvas.style.cursor = TW_OPEN;
+        }
+        if (removeUnderPointer()) {
+          suppressClick = true;          // the finger-up must not also wire a pin
+          controls.enabled = true;
+          try { navigator.vibrate?.(14); } catch { /* no haptics, no problem */ }
+        }
+      }, LONG_PRESS_MS),
+    };
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     if (state.mode !== 'assembly') return;
+    lastPointerType = e.pointerType || 'mouse';
     updatePointer(e);
     raycaster.setFromCamera(pointer, camera);
     if (e.button === 2) {                          // right-click removes things
-      if (hoveredWire) {                           // …a wire
-        const [a, b] = hoveredWire.userData.ids;
-        api.disconnect({ from: a, to: b });
-        audio.ui(); sync(); hud.refreshChecklist();
-      } else {
-        const id = pickComponent();                // …or a whole part
-        if (id) {
-          api.remove_component({ id });
-          hud.flash(`Removed ${id}`, 'ok'); audio.ui();
-          sync(); hud.refreshChecklist();
-        }
-      }
+      removeUnderPointer();
       e.preventDefault();
       return;
     }
+    // touch/pen: a press that stays put for half a second removes instead
+    if (e.pointerType && e.pointerType !== 'mouse') startLongPress(e);
     // left-press on a part body (not a pin) begins a move-drag
     if (e.button === 0 && !pickPin()) {
       const id = pickComponent();
@@ -962,6 +1053,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     }
   });
   window.addEventListener('pointerup', () => {
+    cancelLongPress();
     if (!moving) return;
     const id = moving.id;
     const body = phys?.bodies.get(id);
@@ -978,11 +1070,46 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     canvas.style.cursor = TW_OPEN;
     if (state.mode === 'assembly') { sync(); hud.refreshChecklist(); }
   });
+  // Double-tap a placed part to rotate it — the touch stand-in for the R key.
+  //
+  // The tap is matched by *component*, not by what exactly is under the finger:
+  // on a phone a part is a few hundred pixels of pins and maybe fifty of body,
+  // so a rule that only counted taps on bare body would almost never fire. That
+  // means a double tap on a pin rotates rather than wires — which is the right
+  // trade, since the two pins of one component can't be wired to each other
+  // anyway. Switches are exempt: a tap already toggles them, so a double tap
+  // there reads as "on, off".
+  //
+  // The window is generous: this scene can drop a frame or two on a phone, and
+  // the gap is measured when the handler runs, not when the finger lifted.
+  const DOUBLE_TAP_MS = 450;
+  const DOUBLE_TAP_PX = 28;
+  let lastTap = null;
+  function touchRotate(e) {
+    const pin = pickPin();
+    const id = pin ? String(pin.userData.endpointId).split('.')[0] : pickComponent();
+    const prev = lastTap;
+    lastTap = id ? { id, t: performance.now(), x: e.clientX, y: e.clientY } : null;
+    if (!id || !prev || prev.id !== id) return false;
+    if (performance.now() - prev.t > DOUBLE_TAP_MS) return false;
+    if (Math.hypot(e.clientX - prev.x, e.clientY - prev.y) > DOUBLE_TAP_PX) return false;
+    const comp = api.get_document().components.find(c => c.id === id);
+    const t = comp && baseType(comp.type);
+    if (t === 'switch' || t === 'push_button') return false;
+    lastTap = null;
+    // the first tap may have armed a wire — drop that selection, not the rotate
+    if (pending) { highlightPin(pending, false); pending = null; }
+    rotateComp(id, Math.PI / 8);
+    hud.flash(`Rotated ${id}`, 'ok');
+    return true;
+  }
+
   canvas.addEventListener('click', (e) => {
     if (state.mode !== 'assembly') return;
     if (suppressClick) { suppressClick = false; return; }
     updatePointer(e);
     raycaster.setFromCamera(pointer, camera);
+    if (lastPointerType !== 'mouse' && touchRotate(e)) return;
     const pin = pickPin();
     if (!pin) {
       // clicking a switch body toggles it open/closed (re-solves the circuit)
@@ -999,7 +1126,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     const id = pin.userData.endpointId;
     if (!pending) {
       pending = id; highlightPin(id, true); audio.ui();
-      hud.setStatus(`Selected ${id} — now click its target`);
+      hud.setStatus(`Selected ${id} — now ${COARSE ? 'tap' : 'click'} its target`);
       trackOnce('wire_attempt');
       return;
     }
@@ -1024,7 +1151,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
     for (const c of api.get_document().components) api.remove_component({ id: c.id });
     pending = null;
     sync();
-    hud.setStatus('Drag a battery and a motor from the tray onto the workspace');
+    hud.setStatus(`Drag a battery and a motor from ${TRAY} onto the bench`);
     hud.refreshChecklist();
   }
   clearBtn?.addEventListener('click', clearBoard);

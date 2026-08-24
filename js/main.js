@@ -19,6 +19,7 @@ import { initJarvis } from './app/jarvis.js';
 import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
 import { initTopbar } from './app/topbar.js';
+import { initMobileUI } from './app/mobile.js';
 import { installErrorBoundary, isWebGLAvailable, showFatal } from './app/errors.js';
 import { track, trackOnce, EVENTS, initAnalytics } from './app/analytics.js';
 import { initAccount } from './app/account.js';
@@ -236,6 +237,34 @@ document.getElementById('help-btn')?.addEventListener('click', () => {
   document.getElementById('overlay')?.classList.remove('hidden');
 });
 
+// ── phone shell ─────────────────────────────────────────────────
+// Below 820px the three-column cockpit becomes a full-bleed bench + a bottom
+// sheet + a RUN bar (js/app/mobile.js). The layout changes the canvas' size, so
+// every transition re-runs resize() and re-frames the bench for the new aspect.
+const mobileUI = initMobileUI({
+  onLayoutChange: (reason) => requestAnimationFrame(() => {
+    resize();
+    // only a real layout swap changes the canvas' shape — re-framing on every
+    // sheet toggle would throw away wherever the user had orbited to
+    if ((reason === 'enter' || reason === 'leave') && state.mode === 'assembly') frameBench();
+  }),
+});
+window.__mobile = mobileUI;
+
+// The legend teaches mouse verbs (right-click, R, scroll) that don't exist on a
+// touch screen. Coarse pointers get the gestures creator-assembly actually
+// implements for them, and the card fades out once the first part is down.
+if (window.matchMedia?.('(pointer: coarse)').matches && controlsLegend) {
+  controlsLegend.innerHTML = `
+    <div class="lg-title">CONTROLS</div>
+    <div><b>Drag</b> a part in from Parts · <b>drag</b> a placed part to move</div>
+    <div><b>Tap</b> a pin, then its target pin, to wire them</div>
+    <div><b>Press and hold</b> a part or wire to remove · <b>double-tap</b> to rotate</div>`;
+  window.addEventListener('jarvis:placed', () => {
+    setTimeout(() => controlsLegend.classList.add('faded'), 1200);
+  }, { once: true });
+}
+
 // ── share build ─────────────────────────────────────────────────
 document.getElementById('share-btn').addEventListener('click', async () => {
   if (api.get_document().components.length === 0) { hud.flash('Place some parts first, then share', 'bad'); return; }
@@ -356,10 +385,38 @@ function exitSim() {
   canvas.style.cursor = 'crosshair';
   controlsLegend.classList.remove('hidden');
   controls.enabled = true;
-  controls.target.set(4, 0, 2);
-  camera.position.set(34, 80, 93);
-  camera.fov = 55; camera.updateProjectionMatrix();
+  frameBench();
   hud.simHud.classList.add('hidden');
+}
+
+// Frame the bench, and keep that framing honest across aspect ratios.
+//
+// This is the one place the bench camera is composed, so exitSim(), boot and the
+// phone-shell layout swap all land on the same shot. A perspective camera's
+// *horizontal* field of view shrinks with the aspect ratio, so a viewport much
+// narrower than it is tall crops the bench; past that point the camera backs off
+// along the same view axis (and the dolly limit lifts with it, or OrbitControls
+// would clamp the pull straight back out). The threshold is deliberately below
+// a phone's portrait aspect — measured on a 390×618 canvas the stock shot still
+// frames the whole bench, and pulling back there only made the parts small.
+const BENCH_TARGET = { x: 4, y: 0, z: 2 };
+const BENCH_EYE = { x: 34, y: 80, z: 93 };
+const BENCH_BASE = Math.hypot(BENCH_EYE.x - BENCH_TARGET.x, BENCH_EYE.y - BENCH_TARGET.y, BENCH_EYE.z - BENCH_TARGET.z);
+function frameBench() {
+  const aspect = camera.aspect || 1;
+  const pull = Math.min(1.35, Math.max(1, 0.55 / aspect));
+  const dist = BENCH_BASE * pull;
+  controls.target.set(BENCH_TARGET.x, BENCH_TARGET.y, BENCH_TARGET.z);
+  camera.position.set(
+    BENCH_TARGET.x + ((BENCH_EYE.x - BENCH_TARGET.x) / BENCH_BASE) * dist,
+    BENCH_TARGET.y + ((BENCH_EYE.y - BENCH_TARGET.y) / BENCH_BASE) * dist,
+    BENCH_TARGET.z + ((BENCH_EYE.z - BENCH_TARGET.z) / BENCH_BASE) * dist,
+  );
+  controls.maxDistance = Math.max(175, dist * 1.2);
+  camera.fov = 55;
+  camera.updateProjectionMatrix();
+  camera.lookAt(controls.target.x, controls.target.y, controls.target.z);
+  controls.update();
 }
 
 // ── render loop ─────────────────────────────────────────────────
@@ -389,4 +446,5 @@ function animate() {
 }
 animate();
 resize();
+frameBench();   // compose the bench for whatever aspect this device actually has
 
