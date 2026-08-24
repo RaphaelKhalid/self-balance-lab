@@ -2,12 +2,12 @@
 // teaches the core loop (place → wire → run) without a heavyweight tutorial.
 // It owns no state: every step's "done" is derived by looking at the live
 // document + electrical solve through window.__api, the same surface the tests
-// and Jarvis use. Once the user completes it (or dismisses it) we remember that
+// and Hephaestus use. Once the user completes it (or dismisses it) we remember that
 // in localStorage and never show it again.
 import { baseType } from '../model/library.js';
 import { state } from './state.js';
 
-const SEEN_KEY = 'jarvis-coached';
+const SEEN_KEY = 'sbl-coached';
 
 // Each step: a short label, an optional one-line hint, and a predicate over
 // { doc, elec, mode }. Steps are checked in order; the first not-yet-done step
@@ -85,18 +85,18 @@ export function initCoach(api) {
        </span>
      </li>`).join('');
 
-  // A friendly nudge that Jarvis can do the whole thing for you — the
+  // A friendly nudge that Hephaestus can do the whole thing for you — the
   // learning-curve flattener. Injected once, below the steps.
   const nudge = document.createElement('div');
   nudge.className = 'coach-nudge';
   nudge.innerHTML = `New to this? <button type="button" class="coach-ask" ` +
-    `aria-label="Open Jarvis and ask it to build the circuit">Ask Jarvis to build it ✨</button>`;
+    `aria-label="Open Hephaestus and ask it to build the circuit">Ask Hephaestus to build it ✨</button>`;
   host.appendChild(nudge);
   nudge.querySelector('.coach-ask')?.addEventListener('click', () => {
-    // open Jarvis and pre-fill a starter prompt; it's just the DOM, no coupling.
-    const jv = document.getElementById('jarvis');
+    // open Hephaestus and pre-fill a starter prompt; it's just the DOM, no coupling.
+    const jv = document.getElementById('hephaestus');
     jv?.classList.remove('collapsed');
-    const inp = document.getElementById('jarvis-input');
+    const inp = document.getElementById('hephaestus-input');
     if (inp) { inp.value = 'wire a battery to a motor and run it'; inp.focus(); }
   });
 

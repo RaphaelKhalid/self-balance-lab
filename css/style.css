@@ -279,9 +279,9 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 .insp-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--yellow); }
 .insp-ref { display: block; color: var(--text-dim); font-size: 9.5px; margin-top: 2px; }
 
-/* ── Jarvis (natural-language build assistant) ── */
-#jarvis { position: absolute; right: 14px; bottom: 14px; z-index: 8; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-#jarvis-toggle {
+/* ── Hephaestus (natural-language build assistant) ── */
+#hephaestus { position: absolute; right: 14px; bottom: 14px; z-index: 8; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+#hephaestus-toggle {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 9px 16px; border-radius: var(--r-pill);
   background: linear-gradient(180deg, var(--accent-hover), var(--accent)); color: #14110a; border: none; cursor: pointer;
@@ -289,28 +289,28 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
   box-shadow: 0 4px 18px var(--accent-glow), var(--edge-hi);
   transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast);
 }
-#jarvis-toggle:hover { transform: translateY(-1px); box-shadow: 0 8px 26px var(--accent-glow), var(--edge-hi); }
-#jarvis-toggle svg { width: 15px; height: 15px; }
-#jarvis-panel {
+#hephaestus-toggle:hover { transform: translateY(-1px); box-shadow: 0 8px 26px var(--accent-glow), var(--edge-hi); }
+#hephaestus-toggle svg { width: 15px; height: 15px; }
+#hephaestus-panel {
   width: min(340px, 80vw); display: flex; flex-direction: column;
   background: var(--overlay-strong); border: 1px solid var(--border-2); border-radius: var(--r-lg);
   overflow: hidden; box-shadow: var(--shadow-lg), var(--edge-hi); backdrop-filter: var(--glass-blur);
   animation: rise-in var(--t-med) var(--ease-out) both;
 }
-#jarvis.collapsed #jarvis-panel { display: none; }
-#jarvis-log { max-height: 46vh; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 7px; }
-.jv-msg { font-size: 12px; line-height: 1.5; padding: 8px 11px; border-radius: var(--r-lg); max-width: 92%; white-space: pre-wrap; box-shadow: var(--shadow-1); }
-.jv-user { align-self: flex-end; background: var(--accent-soft); border: 1px solid var(--accent-dim); color: var(--text); border-bottom-right-radius: var(--r-sm); }
-.jv-bot { align-self: flex-start; background: var(--panel-3); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: var(--r-sm); }
-.jv-err { align-self: flex-start; background: var(--bad-bg); border: 1px solid var(--bad-border); color: var(--red); font-size: 11.5px; }
-.jv-tool { align-self: flex-start; font-family: var(--mono); font-size: 10.5px; color: var(--accent-text); padding: 1px 4px; }
-#jarvis-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); }
-#jarvis-input { flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 8px 10px; font: inherit; font-size: 12.5px; }
-#jarvis-input:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--ring-accent); }
-#jarvis-form button { background: var(--accent); border: none; border-radius: var(--r-sm); color: #14110a; width: 34px; cursor: pointer; display: grid; place-items: center; transition: background var(--t-fast), transform var(--t-instant); }
-#jarvis-form button:hover:not(:disabled) { background: var(--accent-hover); }
-#jarvis-form button svg { width: 15px; height: 15px; }
-#jarvis-form button:disabled { opacity: .5; cursor: default; }
+#hephaestus.collapsed #hephaestus-panel { display: none; }
+#hephaestus-log { max-height: 46vh; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 7px; }
+.hp-msg { font-size: 12px; line-height: 1.5; padding: 8px 11px; border-radius: var(--r-lg); max-width: 92%; white-space: pre-wrap; box-shadow: var(--shadow-1); }
+.hp-user { align-self: flex-end; background: var(--accent-soft); border: 1px solid var(--accent-dim); color: var(--text); border-bottom-right-radius: var(--r-sm); }
+.hp-bot { align-self: flex-start; background: var(--panel-3); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: var(--r-sm); }
+.hp-err { align-self: flex-start; background: var(--bad-bg); border: 1px solid var(--bad-border); color: var(--red); font-size: 11.5px; }
+.hp-tool { align-self: flex-start; font-family: var(--mono); font-size: 10.5px; color: var(--accent-text); padding: 1px 4px; }
+#hephaestus-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); }
+#hephaestus-input { flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); padding: 8px 10px; font: inherit; font-size: 12.5px; }
+#hephaestus-input:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--ring-accent); }
+#hephaestus-form button { background: var(--accent); border: none; border-radius: var(--r-sm); color: #14110a; width: 34px; cursor: pointer; display: grid; place-items: center; transition: background var(--t-fast), transform var(--t-instant); }
+#hephaestus-form button:hover:not(:disabled) { background: var(--accent-hover); }
+#hephaestus-form button svg { width: 15px; height: 15px; }
+#hephaestus-form button:disabled { opacity: .5; cursor: default; }
 
 /* ── M1 run panel + sim title ── */
 #run-hint {
@@ -1090,17 +1090,17 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 
 /* ── custom scrollbars (scientific-instrument thin rails) ──────
    Applied to the scrolling panels so the chrome reads as one system. */
-#parts-tray, #inspector, #checklist, #jarvis-log, #serial-log,
+#parts-tray, #inspector, #checklist, #hephaestus-log, #serial-log,
 .g-body, .cr-body, #editor-container .CodeMirror-vscrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--border-2) transparent;
 }
 #parts-tray::-webkit-scrollbar, #inspector::-webkit-scrollbar,
-#checklist::-webkit-scrollbar, #jarvis-log::-webkit-scrollbar,
+#checklist::-webkit-scrollbar, #hephaestus-log::-webkit-scrollbar,
 #serial-log::-webkit-scrollbar, .g-body::-webkit-scrollbar,
 .cr-body::-webkit-scrollbar { width: 10px; height: 10px; }
 #parts-tray::-webkit-scrollbar-thumb, #inspector::-webkit-scrollbar-thumb,
-#checklist::-webkit-scrollbar-thumb, #jarvis-log::-webkit-scrollbar-thumb,
+#checklist::-webkit-scrollbar-thumb, #hephaestus-log::-webkit-scrollbar-thumb,
 #serial-log::-webkit-scrollbar-thumb, .g-body::-webkit-scrollbar-thumb,
 .cr-body::-webkit-scrollbar-thumb {
   background: var(--border-2); border-radius: var(--r-pill);
@@ -1108,11 +1108,11 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
   transition: background var(--t-fast);
 }
 #parts-tray::-webkit-scrollbar-thumb:hover, #inspector::-webkit-scrollbar-thumb:hover,
-#checklist::-webkit-scrollbar-thumb:hover, #jarvis-log::-webkit-scrollbar-thumb:hover,
+#checklist::-webkit-scrollbar-thumb:hover, #hephaestus-log::-webkit-scrollbar-thumb:hover,
 #serial-log::-webkit-scrollbar-thumb:hover, .g-body::-webkit-scrollbar-thumb:hover,
 .cr-body::-webkit-scrollbar-thumb:hover { background: var(--gray-8); background-clip: content-box; }
 #parts-tray::-webkit-scrollbar-track, #inspector::-webkit-scrollbar-track,
-#checklist::-webkit-scrollbar-track, #jarvis-log::-webkit-scrollbar-track,
+#checklist::-webkit-scrollbar-track, #hephaestus-log::-webkit-scrollbar-track,
 #serial-log::-webkit-scrollbar-track, .g-body::-webkit-scrollbar-track,
 .cr-body::-webkit-scrollbar-track { background: transparent; }
 
@@ -1128,7 +1128,7 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 
 /* ============================================================
    Integration pass — styles for classes/hooks introduced by the
-   parallel inspector / tray-search / touch / coach+jarvis work.
+   parallel inspector / tray-search / touch / coach+hephaestus work.
    ============================================================ */
 
 /* -- Inspector: new component-card + violation hierarchy -- */
@@ -1159,30 +1159,30 @@ aside, main { background: var(--panel); overflow: hidden; display: flex; flex-di
 .tray-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .tray-empty { color: var(--text-faint); font-size: var(--fs-sm); text-align: center; padding: var(--sp-3); }
 
-/* -- Coach: hints, ask-Jarvis nudge, celebration -- */
+/* -- Coach: hints, ask-Hephaestus nudge, celebration -- */
 .coach-body { display: flex; flex-direction: column; gap: 4px; }
 .coach-hint { color: var(--text-dim); font-size: var(--fs-xs); font-style: italic; }
 .coach-nudge { margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); }
 .coach-ask { color: var(--accent); background: none; border: none; padding: 0; font: inherit; font-size: var(--fs-xs); cursor: pointer; text-decoration: underline; }
 .coach-done { color: var(--success); font-weight: 600; text-align: center; padding: var(--sp-2); }
 
-/* -- Jarvis: thinking indicator + example-prompt chips -- */
-.jv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-.jv-chip { border: 1px solid var(--border); background: var(--panel-3); color: var(--text-dim); font-size: var(--fs-xs); padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
-.jv-chip:hover { color: var(--accent); border-color: var(--accent); }
-.jv-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.jv-thinking { display: inline-flex; gap: 4px; align-items: center; padding: 4px 2px; }
-.jv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .5; animation: jvblink 1.2s infinite ease-in-out; }
-.jv-dot:nth-child(2) { animation-delay: .2s; }
-.jv-dot:nth-child(3) { animation-delay: .4s; }
-@keyframes jvblink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
+/* -- Hephaestus: thinking indicator + example-prompt chips -- */
+.hp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.hp-chip { border: 1px solid var(--border); background: var(--panel-3); color: var(--text-dim); font-size: var(--fs-xs); padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+.hp-chip:hover { color: var(--accent); border-color: var(--accent); }
+.hp-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.hp-thinking { display: inline-flex; gap: 4px; align-items: center; padding: 4px 2px; }
+.hp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .5; animation: hpblink 1.2s infinite ease-in-out; }
+.hp-dot:nth-child(2) { animation-delay: .2s; }
+.hp-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes hpblink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
 
 /* -- iOS: page-level overscroll lock + touch-control safe-area insets -- */
 html, body { overscroll-behavior: none; }
 #touch-controls { padding-bottom: var(--tc-safe-bottom, 0); padding-left: var(--tc-safe-left, 0); padding-right: var(--tc-safe-right, 0); }
 
 @media (prefers-reduced-motion: reduce) {
-  .jv-dot { animation: none; }
+  .hp-dot { animation: none; }
 }
 
 /* ── example-circuit gallery ── */
@@ -1249,7 +1249,7 @@ html, body { overscroll-behavior: none; }
    The desktop cockpit is tray | bench | run panel. Stacked into three rows on a
    phone that left the bench — the actual product — as a ~130px letterbox with
    every floating overlay piled into it. So below 820px the bench goes
-   full-bleed, the panels become one bottom sheet (Parts / Circuit / Jarvis, one
+   full-bleed, the panels become one bottom sheet (Parts / Circuit / Hephaestus, one
    at a time), and RUN moves into a fixed bottom bar. mobile.js moves the nodes;
    everything here is layout only, and all of it is scoped to .is-phone so a
    viewport that grows back to desktop width reverts cleanly. */
@@ -1280,8 +1280,15 @@ html, body { overscroll-behavior: none; }
     gap: 6px;
     white-space: nowrap;
   }
-  body.is-phone .tb-name { font-size: 15px; }
-  body.is-phone .tb-sub { display: none; }          /* "Robotics Creator" — brand only */
+  /* Mark only: the wordmark, the build chip, four icon buttons and the account
+     chip do not fit across 390px, and of those the wordmark is the one the user
+     already knows. It stays in the accessibility tree. */
+  body.is-phone .tb-name {
+    position: absolute; width: 1px; height: 1px; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  body.is-phone .tb-sub { display: none; }          /* "Robotics Creator" */
+  body.is-phone .tb-brand { gap: 0; }
   body.is-phone .tb-robot { padding: 4px 9px; font-size: 11px; max-width: 30vw; overflow: hidden; }
   body.is-phone #tb-robot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body.is-phone .tb-actions { gap: 4px; }
@@ -1354,9 +1361,10 @@ html, body { overscroll-behavior: none; }
     flex: 1 1 0; min-height: 46px; min-width: 44px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
     background: transparent; border: 1px solid transparent; border-radius: var(--r);
-    color: var(--text-dim); font-family: var(--ui); font-size: 10.5px; letter-spacing: .04em;
+    color: var(--text-dim); font-family: var(--ui); font-size: 10px; letter-spacing: .03em;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
+  body.is-phone #mobile-bar .m-tab span { white-space: nowrap; }
   body.is-phone #mobile-bar .m-tab.is-open {
     color: var(--accent); background: var(--accent-soft); border-color: var(--accent-dim);
   }
@@ -1400,17 +1408,17 @@ html, body { overscroll-behavior: none; }
   body.is-phone #examples-btn, body.is-phone #room-toggle { top: 10px; right: 10px; min-height: 36px; }
   body.is-phone #room-toggle { top: 52px; }
 
-  /* ── Jarvis: a sheet like the others, driven by the bar's tab ── */
-  body.is-phone #jarvis {
+  /* ── Hephaestus: a sheet like the others, driven by the bar's tab ── */
+  body.is-phone #hephaestus {
     position: fixed; left: 8px; right: 8px; z-index: 60;
     bottom: calc(var(--m-bar-h) + var(--m-safe-b) + 8px);
     align-items: stretch;
   }
-  body.is-phone #jarvis-toggle { display: none; }        /* the bar tab replaces the pill */
-  body.is-phone #jarvis-panel { width: auto; }
-  body.is-phone #jarvis-log { max-height: 38dvh; }
-  body.is-phone #jarvis-input { font-size: 16px; }       /* < 16px makes iOS zoom the page */
-  body.is-phone #jarvis-form button { width: 44px; min-height: 44px; }
+  body.is-phone #hephaestus-toggle { display: none; }        /* the bar tab replaces the pill */
+  body.is-phone #hephaestus-panel { width: auto; }
+  body.is-phone #hephaestus-log { max-height: 38dvh; }
+  body.is-phone #hephaestus-input { font-size: 16px; }       /* < 16px makes iOS zoom the page */
+  body.is-phone #hephaestus-form button { width: 44px; min-height: 44px; }
 
   /* ── touch targets + touch-friendly tray ──
      .part-card needs touch-action:none or the sheet's own scroll swallows the
@@ -1482,6 +1490,6 @@ html, body { overscroll-behavior: none; }
   }
   /* only the step you're on: five rows don't fit beside a landscape bench */
   body.is-phone #coach-steps li:not(.current) { display: none; }
-  body.is-phone #jarvis { left: auto; right: 10px; width: min(360px, 56vw); }
+  body.is-phone #hephaestus { left: auto; right: 10px; width: min(360px, 56vw); }
   body.is-phone #controls-legend { display: none; }   /* no room; the coach carries it */
 }

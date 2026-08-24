@@ -19,8 +19,8 @@ export const EVENTS = Object.freeze({
   CONNECT_FAIL: 'connect_fail',   // a rejected pin pair — where users get stuck
   CIRCUIT_OK: 'circuit_ok',       // ★ activation: first solved circuit with current
   RUN_ENTER: 'run_enter',         // entered the RUN physics sim
-  JARVIS_MSG: 'jarvis_msg',       // user sent the assistant a message
-  JARVIS_TOOL: 'jarvis_tool',     // the assistant mutated the build
+  HEPHAESTUS_MSG: 'hephaestus_msg',       // user sent the assistant a message
+  HEPHAESTUS_TOOL: 'hephaestus_tool',     // the assistant mutated the build
   SHARE: 'share',                 // virality signal — copied a shareable build link
 });
 

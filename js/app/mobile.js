@@ -3,7 +3,7 @@
 // On a desktop the app is a three-column cockpit: tray | bench | run panel. On a
 // phone that same grid stacked into three short rows and the bench — the whole
 // product — ended up a ~130px letterbox between two panels, with the controls
-// legend, the coach card, the Jarvis pill and the three round canvas buttons all
+// legend, the coach card, the Hephaestus pill and the three round canvas buttons all
 // piled on top of it. Nothing about that is fixable with a couple of width
 // tweaks, so phones get a different shell:
 //
@@ -22,7 +22,7 @@ const PHONE_MQ = '(max-width: 820px)';
 const TABS = [
   { id: 'parts', label: 'Parts', icon: 'boxes' },
   { id: 'circuit', label: 'Circuit', icon: 'activity' },
-  { id: 'jarvis', label: 'Jarvis', icon: 'sparkles' },
+  { id: 'hephaestus', label: 'Hephaestus', icon: 'sparkles' },
 ];
 
 export function initMobileUI({ onLayoutChange } = {}) {
@@ -114,9 +114,9 @@ export function initMobileUI({ onLayoutChange } = {}) {
     open = id;
     body.dataset.sheet = id;
     body.classList.add('sheet-open');
-    // Jarvis is its own panel, not part of the left rail
-    document.getElementById('jarvis')?.classList.toggle('collapsed', id !== 'jarvis');
-    if (id === 'jarvis') document.getElementById('jarvis-input')?.focus({ preventScroll: true });
+    // Hephaestus is its own panel, not part of the left rail
+    document.getElementById('hephaestus')?.classList.toggle('collapsed', id !== 'hephaestus');
+    if (id === 'hephaestus') document.getElementById('hephaestus-input')?.focus({ preventScroll: true });
     syncTabs();
     onLayoutChange?.('sheet');
   }
@@ -124,7 +124,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
     open = null;
     delete body.dataset.sheet;
     body.classList.remove('sheet-open');
-    document.getElementById('jarvis')?.classList.add('collapsed');
+    document.getElementById('hephaestus')?.classList.add('collapsed');
     document.activeElement?.blur?.();
     syncTabs();
     onLayoutChange?.('sheet');
@@ -153,7 +153,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
     if (upload) bar.appendChild(upload);                  // RUN sits in the bar
     if (actions) canvasBtns.forEach(el => el && actions.prepend(el));
     addHandle(document.getElementById('left-panel'), 'parts');
-    addHandle(document.getElementById('jarvis-panel'), 'jarvis');
+    addHandle(document.getElementById('hephaestus-panel'), 'hephaestus');
     body.classList.add('is-phone');
     // the markup's opening line names a tray that is a sheet here
     const status = document.getElementById('hud-status');
@@ -186,7 +186,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
   });
 
   // Dropping a part is the moment the bench matters — get out of its way.
-  window.addEventListener('jarvis:placed', () => { if (open === 'parts') closeSheet(); });
+  window.addEventListener('bench:placed', () => { if (open === 'parts') closeSheet(); });
 
   return { isPhone: () => body.classList.contains('is-phone'), openSheet, closeSheet };
 }
