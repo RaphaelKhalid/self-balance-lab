@@ -1,6 +1,6 @@
 // Inspector panel — the DOM window into the live RobotDoc. It renders nothing it
 // owns: every value comes from `window.__api` (get_document / read_electrical /
-// read_telemetry), the same surface the tests and (later) Jarvis drive. This is
+// read_telemetry), the same surface the tests and (later) Hephaestus drive. This is
 // the M1 replacement for the deleted Guide rail — it surfaces the electrical
 // solve and its violations, which previously had no on-screen home.
 //

@@ -1,4 +1,4 @@
-// Vercel Edge Function — the Jarvis backend (Milestone 2), on the Gemini API.
+// Vercel Edge Function — the Hephaestus backend (Milestone 2), on the Gemini API.
 //
 // The browser never holds the key. This endpoint takes the running conversation
 // (Gemini `contents`) + a snapshot of the current build, calls generateContent
@@ -24,7 +24,7 @@ export default async function handler(req) {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return json({ error: 'Jarvis is not configured (no API key on the server).' }, 503);
+  if (!key) return json({ error: 'Hephaestus is not configured (no API key on the server).' }, 503);
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
   let body;
@@ -68,7 +68,7 @@ export default async function handler(req) {
   const cand = data.candidates && data.candidates[0];
   if (!cand || !cand.content) {
     const reason = (data.promptFeedback && data.promptFeedback.blockReason) || cand?.finishReason || 'no candidate';
-    return json({ error: `Jarvis produced no reply (${reason})` }, 502);
+    return json({ error: `Hephaestus produced no reply (${reason})` }, 502);
   }
   // Return only the client-relevant slice: the model turn.
   return json({
