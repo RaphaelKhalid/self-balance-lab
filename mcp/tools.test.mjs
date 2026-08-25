@@ -140,3 +140,29 @@ test('undo reverses the last edit, and new_build clears everything', () => {
   // the reset must swap the workspace's live api, not just its document
   assert.deepEqual(call(ws, 'get_build').components, []);
 });
+
+// The glossary drifted badly once: it still described an Arduino, an MPU6050 and
+// an L298N from the deleted balancing robot, while missing the resistor, switch,
+// potentiometer, LED and motor — so the parts in every beginner circuit had no
+// hover tooltip, and anyone reading the repo was told it simulated hardware it
+// does not have. CLAUDE.md asks you to update the glossary by hand when you add
+// a component; that convention failed silently for months. This enforces it.
+test('the glossary matches the component library exactly, in both directions', async () => {
+  const { LIBRARY } = await import('../js/model/library.js');
+  const { COMPONENTS, PINS } = await import('../js/glossary.js');
+
+  for (const type of Object.keys(LIBRARY)) {
+    assert.ok(COMPONENTS[type], `glossary is missing component "${type}"`);
+    for (const pin of LIBRARY[type].pins) {
+      assert.ok(PINS[`${type}.${pin.name}`], `glossary is missing pin "${type}.${pin.name}"`);
+    }
+  }
+  for (const type of Object.keys(COMPONENTS)) {
+    assert.ok(LIBRARY[type], `glossary describes "${type}", which is not in the library`);
+  }
+  for (const key of Object.keys(PINS)) {
+    const [type, pin] = key.split('.');
+    assert.ok(LIBRARY[type], `glossary pin "${key}" belongs to no library component`);
+    assert.ok(LIBRARY[type].pins.some(p => p.name === pin), `library has no pin "${key}"`);
+  }
+});
