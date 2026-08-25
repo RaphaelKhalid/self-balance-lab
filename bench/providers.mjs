@@ -79,6 +79,93 @@ export function makeGemini({ model = 'gemini-3.5-flash-lite', apiKey }) {
   };
 }
 
+/**
+ * OpenRouter — one key, many vendors, OpenAI-compatible wire format.
+ *
+ * This is the adapter that makes a cross-model sweep practical: swapping
+ * `--model deepseek/deepseek-v4-flash` for a frontier slug changes nothing else.
+ * It also asks OpenRouter to report real spend (`usage.include`), so the cost
+ * line is the provider's own number rather than my arithmetic over a price table
+ * that goes stale.
+ */
+export function makeOpenRouter({ model = 'deepseek/deepseek-v4-flash', apiKey }) {
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
+  return {
+    id: `openrouter:${model}`,
+    newHistory: () => [],
+    pushAssistant(history, raw) { history.push(raw.message); },
+    pushToolResults(history, results) {
+      // OpenAI shape: one `tool` message per call, each keyed by tool_call_id.
+      for (const r of results) {
+        history.push({
+          role: 'tool',
+          tool_call_id: r.id,
+          content: JSON.stringify(r.result),
+        });
+      }
+    },
+    pushUser(history, text) { history.push({ role: 'user', content: text }); },
+
+    async chat({ system, history, tools }) {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'system', content: system }, ...history],
+          tools: tools.map(t => ({
+            type: 'function',
+            function: {
+              name: t.name,
+              description: t.description,
+              parameters: {
+                type: 'object',
+                properties: t.schema.properties || {},
+                ...(t.schema.required ? { required: t.schema.required } : {}),
+              },
+            },
+          })),
+          tool_choice: 'auto',
+          usage: { include: true },
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      }
+      const data = await res.json();
+      // An upstream provider error arrives as HTTP 200 with an `error` body.
+      if (data.error) throw new Error(`OpenRouter: ${data.error.message || JSON.stringify(data.error)}`);
+      const message = data.choices?.[0]?.message;
+      if (!message) throw new Error(`OpenRouter: no message in response`);
+
+      return {
+        raw: { message },
+        text: message.content || '',
+        toolCalls: (message.tool_calls || []).map((c) => ({
+          id: c.id,
+          name: c.function?.name,
+          // arguments is a JSON *string* here, and models do emit malformed ones.
+          // A parse failure must reach the model as a tool error, not crash the run.
+          input: safeParse(c.function?.arguments),
+        })),
+        usage: {
+          in: data.usage?.prompt_tokens || 0,
+          out: data.usage?.completion_tokens || 0,
+          cost: data.usage?.cost ?? null,
+        },
+      };
+    },
+  };
+}
+
+function safeParse(s) {
+  if (!s) return {};
+  try { return JSON.parse(s); } catch { return { __malformed: String(s).slice(0, 200) }; }
+}
+
 export async function makeAnthropic({ model = 'claude-opus-5', apiKey, effort }) {
   let Anthropic;
   try {

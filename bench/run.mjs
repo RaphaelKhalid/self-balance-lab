@@ -14,7 +14,7 @@
 // Each task runs in a FRESH workspace so tasks cannot contaminate each other.
 import { createWorkspace, runTool, TOOLS } from '../mcp/workspace.js';
 import { TASKS } from './tasks.js';
-import { makeGemini, makeAnthropic, PRICING } from './providers.mjs';
+import { makeGemini, makeOpenRouter, makeAnthropic, PRICING } from './providers.mjs';
 
 const MAX_TURNS = 20;          // generous; a correct build takes ~6-10 tool calls
 const args = parseArgs(process.argv.slice(2));
@@ -67,7 +67,7 @@ const SYSTEM = [
 function parseArgs(argv) {
   const out = {
     provider: 'gemini', model: null, tasks: null,
-    effort: null, blind: false, verbose: false,
+    effort: null, blind: false, repeat: 1, verbose: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -76,6 +76,7 @@ function parseArgs(argv) {
     else if (a === '--tasks') out.tasks = argv[++i].split(',').map(s => s.trim());
     else if (a === '--effort') out.effort = argv[++i];
     else if (a === '--blind') out.blind = true;
+    else if (a === '--repeat') out.repeat = Math.max(1, parseInt(argv[++i], 10) || 1);
     else if (a === '--verbose' || a === '-v') out.verbose = true;
   }
   return out;
@@ -88,6 +89,12 @@ async function buildAdapter() {
       apiKey: process.env.GEMINI_API_KEY,
     });
   }
+  if (args.provider === 'openrouter') {
+    return makeOpenRouter({
+      model: args.model || 'deepseek/deepseek-v4-flash',
+      apiKey: process.env.OPENROUTER_API_KEY,
+    });
+  }
   if (args.provider === 'anthropic') {
     return makeAnthropic({
       model: args.model || 'claude-opus-5',
@@ -95,7 +102,8 @@ async function buildAdapter() {
       effort: args.effort,
     });
   }
-  throw new Error(`unknown provider "${args.provider}" (gemini | anthropic)`);
+  throw new Error(
+    `unknown provider "${args.provider}" (openrouter | gemini | anthropic)`);
 }
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -128,7 +136,7 @@ async function runTask(adapter, task) {
 
   const trace = [];
   let turns = 0;
-  let usage = { in: 0, out: 0 };
+  let usage = { in: 0, out: 0, cost: 0 };
   let stop = 'turn-limit';
   let errored = false;
 
@@ -145,7 +153,12 @@ async function runTask(adapter, task) {
       errored = true;
       break;
     }
-    usage = { in: usage.in + reply.usage.in, out: usage.out + reply.usage.out };
+    usage = {
+      in: usage.in + reply.usage.in,
+      out: usage.out + reply.usage.out,
+      // null when the provider doesn't report spend; the price table covers those
+      cost: usage.cost + (reply.usage.cost || 0),
+    };
     adapter.pushAssistant(history, reply.raw);
 
     if (reply.toolCalls.length === 0) {
@@ -210,16 +223,31 @@ async function main() {
   console.log(`\n  ${adapter.id}${args.blind ? '  [BLIND — no solver feedback]' : ''}`
     + `  —  ${chosen.length} task(s)\n`);
 
+  // Repeats matter more than they look: the fuse task failed on one run and
+  // passed on the next with the same model and prompt. A single sample is noise,
+  // so --repeat reports a pass RATE per task rather than a verdict.
   const results = [];
   for (const task of chosen) {
     process.stdout.write(`  ${task.id.padEnd(24)} `);
-    const r = await runTask(adapter, task);
-    results.push(r);
-    const mark = r.errored ? 'ERR ' : (r.passed ? 'PASS' : 'FAIL');
-    const note = r.passed ? '' : `  (${r.stop}${r.violations.length ? '; ' + r.violations[0] : ''})`;
-    console.log(`${mark}  ${String(r.toolCalls).padStart(2)} calls${note}`);
+    const attempts = [];
+    for (let i = 0; i < args.repeat; i++) {
+      attempts.push(await runTask(adapter, task));
+    }
+    results.push(...attempts);
+
+    const scoredAttempts = attempts.filter(a => !a.errored);
+    const wins = scoredAttempts.filter(a => a.passed).length;
+    if (args.repeat === 1) {
+      const r = attempts[0];
+      const mark = r.errored ? 'ERR ' : (r.passed ? 'PASS' : 'FAIL');
+      const note = r.passed ? '' : `  (${r.stop}${r.violations.length ? '; ' + r.violations[0] : ''})`;
+      console.log(`${mark}  ${String(r.toolCalls).padStart(2)} calls${note}`);
+    } else {
+      const rate = scoredAttempts.length ? `${wins}/${scoredAttempts.length}` : 'all errored';
+      console.log(`${String(rate).padEnd(6)} ${wins === scoredAttempts.length && wins ? 'consistent' : 'VARIES'}`);
+    }
     if (args.verbose) {
-      console.log(`    currents: ${JSON.stringify(r.currents)}`);
+      for (const a of attempts) console.log(`    currents: ${JSON.stringify(a.currents)}`);
     }
   }
 
@@ -230,10 +258,12 @@ async function main() {
   const errors = results.filter(r => r.errored);
   const passed = scored.filter(r => r.passed).length;
   const totalUsage = results.reduce(
-    (a, r) => ({ in: a.in + r.usage.in, out: a.out + r.usage.out }), { in: 0, out: 0 },
+    (a, r) => ({ in: a.in + r.usage.in, out: a.out + r.usage.out, cost: a.cost + (r.usage.cost || 0) }),
+    { in: 0, out: 0, cost: 0 },
   );
   const model = (args.model || (args.provider === 'anthropic' ? 'claude-opus-5' : ''));
-  const cost = costOf(model, totalUsage);
+  // The provider's reported spend wins — a local price table goes stale.
+  const cost = totalUsage.cost > 0 ? totalUsage.cost : costOf(model, totalUsage);
 
   console.log(`\n  ${passed}/${scored.length} passed`
     + (errors.length ? `   (${errors.length} errored, excluded)` : ''));

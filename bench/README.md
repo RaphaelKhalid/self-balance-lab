@@ -69,35 +69,68 @@ fails:
 | potentiometer left at default 500Ω | 15 mA — motor won't turn |
 | diode wired backwards | 0 A |
 
-## First results (2026-08-24)
+## Results (2026-08-24)
 
-**`gemini-3.5-flash-lite`, open-book: 6/6 on the tasks that ran** (4 errored on
-free-tier quota and are excluded, not counted as failures).
+`deepseek/deepseek-v4-flash` via OpenRouter — cheap, explicitly **not** a
+frontier model.
 
-**Same model, `--blind`, 3 tasks: 2/3.** Only `fuse-survives` failed.
+| condition | score | cost |
+|---|---|---|
+| open-book, 1 run | **9/10** | $0.008 |
+| **blind, 3 runs per task** | **27/29** | $0.021 |
+
+Blind, per task — the only one that is not solid is the fuse:
+
+```
+motor-spins            3/3     switch-controls-motor  3/3
+led-lit-safely         3/3     motor-speed-limited    3/3
+motor-reversed         3/3     two-leds-parallel      2/2
+diode-conducts         3/3     buzzer-safe            3/3
+button-and-led         3/3     fuse-survives          1/3   VARIES
+```
+
+(One `two-leds-parallel` attempt died on a network error and is excluded rather
+than counted as a failure.)
+
+`gemini-3.5-flash-lite` scored 6/6 open-book on the tasks that ran before its
+free-tier quota ran out.
 
 ### What this means
 
 The premise this harness was built to test — *"frontier models write clean PID
-controllers but cannot wire a motor driver"* — **is not supported by the first
-data.** A small, cheap, non-frontier model solved every task it attempted,
-including the ones built as traps, and still passed most of them blind.
+controllers but cannot wire a motor driver"* — **is not supported.**
 
-That is a useful result, and it was cheap to get. It says the interesting
-finding is not "models can't do this." If anything survives, it is narrower:
-something like *models can iterate to a working circuit but are weaker at
-designing protection* (the single blind failure was the fuse task, where the
-protective part has to be sized rather than bolted on). That is a much smaller
-claim and would need many more tasks at that difficulty, plus several models,
-before it was worth publishing.
+The result is stronger than "one model got lucky". It holds under the *harder*
+condition: blind, with no solver to iterate against, a cheap non-frontier model
+built correct circuits from knowledge alone on 27 of 29 attempts, including
+every trap. It sized an LED resistor correctly, closed a default-open switch,
+solved a potentiometer for a target current band, and got diode polarity right,
+without ever measuring anything.
 
-### Caveats on the above
+**The one real signal is `fuse-survives` at 1/3.** That is the task where a
+protective part has to be *sized* rather than bolted on. It is also the only
+task in the set that gestures at protection design — and protection is precisely
+what this simulator represents worst (see below). So the honest reading is not
+"models are weak at protection"; it is "the one place we saw weakness is the one
+place our physics is thinnest, and we cannot yet tell those apart."
 
-- One model, one run, no repeats. Nothing here is statistically meaningful.
-- 4 of 10 open-book tasks never ran (quota). The runner prints
-  `INCOMPLETE RUN — do not quote this as a result` when that happens.
-- The blind run covered only 3 tasks.
-- The task ceiling is low. A harder tier (multi-branch, current budgets,
-  H-bridge-shaped topologies) would be needed to find where models actually
-  break, and it is an open question whether they break at all before the tasks
-  stop resembling anything a learner would build.
+### The ceiling is the simulator, not the task list
+
+`js/sim/circuit.js` is a **DC operating-point solver**: no inductance, no
+capacitor dynamics, no transient or AC analysis, a piecewise-linear diode, and
+no transistors. The failure modes that make real motor-driver wiring hard —
+inductive kick, inrush, PWM ripple, H-bridge shoot-through, thermal runaway —
+**cannot be represented**, so no task here can pose them.
+
+That means a 90% pass rate is evidence about *these* tasks under *this* physics,
+and not yet evidence about model capability at hardware. Whether deeper physics
+would produce a discriminating benchmark is an open question, scoped in
+`docs/research/OVERNIGHT-PLAN.md`.
+
+### Caveats
+
+- One model at depth; a frontier sweep has not been run.
+- Three samples per task. Enough to catch the fuse task flipping, not enough for
+  a confidence interval.
+- Grading is exact but *narrow*: `pass()` checks solved current and violations.
+  A build could satisfy the band via a topology no engineer would choose.
