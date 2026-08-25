@@ -28,7 +28,9 @@ export default [
   {
     // The MCP server — plain Node, not a browser. It imports js/model, js/api and
     // js/sim directly, so those files must stay free of browser globals.
-    files: ['mcp/**/*.{js,mjs}'],
+    // bench/ rides along here: same shape (plain Node driving mcp/workspace.js),
+    // same reason the imported solver must stay browser-free.
+    files: ['mcp/**/*.{js,mjs}', 'bench/**/*.{js,mjs}'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
