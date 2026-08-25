@@ -8,13 +8,20 @@
 //
 // Runtime: Edge. No SDK — a single fetch. Set GEMINI_API_KEY in the Vercel
 // project (a free-tier AI Studio key, format "AIza…"). GEMINI_MODEL optionally
-// overrides the model (default: gemini-2.5-flash-lite — the roomiest free tier:
-// 15 RPM / 1,000 requests-per-day).
+// overrides the model.
+//
+// The default was gemini-2.5-flash-lite until 2026-08-24, when it started
+// returning 404 "no longer available to new users" — so Hephaestus was dead on
+// the live site for anyone whose key wasn't grandfathered in. The error names
+// gemini-3.5-flash-lite as the replacement, and that is what this now uses.
+// Deliberately no rate-limit numbers here: Google stopped publishing static
+// per-model free-tier limits and points at AI Studio for the live figures, so
+// any number written down would be stale the moment it was.
 import { geminiFunctionDeclarations, SYSTEM_PROMPT } from '../js/api/tools.js';
 
 export const config = { runtime: 'edge' };
 
-const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 const json = (obj, status = 200) =>
