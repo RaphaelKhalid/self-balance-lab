@@ -80,3 +80,14 @@ test('a first-time visitor gets cream, and a saved choice still wins', async ({ 
   expect(await page.evaluate(
     () => document.documentElement.getAttribute('data-theme'))).toBe('dark');
 });
+
+test('the Inspector lives in the right panel on desktop', async ({ page }) => {
+  // The left column used to stack tray + connections + inspector, each with its
+  // own scrollbar, while the right panel held a hint and one button.
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.__api, null, { timeout: 30_000 });
+  expect(await page.evaluate(
+    () => !!document.querySelector('#right-panel #inspector-block'))).toBe(true);
+  expect(await page.evaluate(
+    () => !!document.querySelector('#left-panel #inspector-block'))).toBe(false);
+});

@@ -53,6 +53,30 @@ export function initMobileUI({ onLayoutChange } = {}) {
   // connections + inspector readout. On a phone they're separate tabs, so wrap
   // each run of children in a group the CSS can show one at a time. Ids are
   // untouched, so every other module still finds its nodes.
+  // On desktop the Inspector lives in #right-panel (see index.html). A phone
+  // hides that panel entirely — its RUN button is moved to the bottom bar — so
+  // the Inspector has to be carried across, or the phone loses the readout that
+  // actually explains the circuit. It rides in the Circuit tab beside
+  // CONNECTIONS, which is where it used to live before the desktop rebalance.
+  // Moving the node keeps its listeners and its id, so inspector.js never knows.
+  function borrowInspector() {
+    const block = document.getElementById('inspector-block');
+    const left = document.getElementById('left-panel');
+    if (!block || !left) return;
+    // On the FIRST enter the groups do not exist yet, so it lands in the panel
+    // and groupLeftPanel() sweeps it into the circuit group. On a re-enter the
+    // groups already exist and are never rebuilt, so it has to be put straight
+    // into the circuit group or it would sit outside every tab and never show.
+    const target = left.querySelector('[data-mgroup="circuit"]') || left;
+    if (block.parentElement !== target) target.appendChild(block);
+  }
+
+  function returnInspector() {
+    const block = document.getElementById('inspector-block');
+    const right = document.getElementById('right-panel');
+    if (block && right && block.parentElement !== right) right.appendChild(block);
+  }
+
   function groupLeftPanel() {
     const left = document.getElementById('left-panel');
     if (!left || left.querySelector('[data-mgroup]')) return;
@@ -142,6 +166,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
   // ── enter / leave the phone layout ───────────────────────────
   function enter() {
     if (body.classList.contains('is-phone')) return;
+    borrowInspector();   // must run BEFORE grouping so it lands in the circuit group
     groupLeftPanel();
     buildBar();
     const upload = document.getElementById('upload-btn');
@@ -170,6 +195,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
     closeSheet();
     for (const { el, parent, next } of homes || []) parent?.insertBefore(el, next);
     homes = null;
+    returnInspector();   // hand it back to #right-panel for the desktop layout
     onLayoutChange?.('leave');
   }
 
