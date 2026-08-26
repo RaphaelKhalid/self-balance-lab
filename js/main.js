@@ -239,7 +239,7 @@ function checkActivation() {
 
 // the fused build surface: placement + wiring as a pure view over api.get_document().
 // Created after the API so its onDocChange → sync loop is wired both ways.
-assemblyApi = initCreatorAssembly({ canvas, scene, camera, controls, api, hud });
+assemblyApi = initCreatorAssembly({ canvas, scene, camera, controls, api, hud, benchRoom });
 // live ω from the running sim → the solver's back-EMF input (Inspector readout)
 creatorSim.onOmega((tel) => api.setSimState(tel));
 // RobotDoc v2 persistence + shareable #build= link (v1 saves migrate on load)
