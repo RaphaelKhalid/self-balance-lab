@@ -57,7 +57,21 @@ try {
   showFatal();
   throw e;
 }
-const { renderer, scene, camera, controls, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights } = sceneBits;
+const { renderer, scene, camera, controls, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights, setTheme } = sceneBits;
+
+// ── keep the 3D rig in step with the theme ──────────────────────────────
+// topbar.js owns the toggle and writes data-theme on <html>; the 3D view used
+// to ignore it entirely, so light mode was a cream shell wrapped around a
+// permanently dark bench. Observing the attribute rather than taking a callback
+// keeps the two modules unaware of each other — the topbar does not need to
+// know a scene exists, and anything else that flips the theme works too.
+function syncSceneTheme() {
+  setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+}
+new MutationObserver(syncSceneTheme).observe(document.documentElement, {
+  attributes: true, attributeFilter: ['data-theme'],
+});
+syncSceneTheme();   // boot: honour whatever theme localStorage restored
 // Feed the renderer to the perf HUD so it can show draw-call/triangle counts (no-op when the HUD is off).
 window.__perf?.setRenderer?.(renderer);
 // Optional captured-room backdrop (Gaussian splat). Inert unless a splat is
@@ -75,7 +89,7 @@ scene.fog = null; // the room encloses the view; the studio fog would gray it ou
 assemblyDecor.length = 0;
 assemblyDecor.push(shadowCatcher, benchRoom.group);
 window.__benchRoom = benchRoom;
-window.__view = { camera, controls }; // dev hook: inspect/position the assembly camera
+window.__view = { camera, controls, scene, renderer, setTheme }; // dev hook: camera, and the handles the theme test needs
 
 // Scan variant of the room (the augmented photogrammetry mesh) + a click-to-swap
 // toggle. In Scan mode the captured counter itself is the bench — bench-scan

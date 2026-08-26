@@ -33,6 +33,56 @@ const COL = {
   rimCol:  0x5b8cff,   // blue rim/separation light
 };
 
+// The light theme is deliberately CREAM, not white, and warm rather than neutral.
+// Two reasons. Comfort: pulling blue out of a bright UI is what "night light"
+// modes do, and this is a tool people stare at for an hour. Distinctiveness:
+// every competitor in browser electronics — Wokwi, Falstad, CircuitJS — is dark
+// and techy, which reads "for engineers". Cream reads "for learners", which is
+// the audience.
+//
+// The whole rig moves together, not just the backdrop. A cream sky under a cool
+// blue key light looks like a rendering bug, so the key/fill/rim warm up, the
+// ambient and hemisphere come UP (high-key lighting has soft, filled shadows),
+// and the rim light comes DOWN — dramatic separation is a dark-studio device and
+// looks dirty on cream.
+const COL_LIGHT = {
+  bgTop:   0xefe6d6,   // warm sand at the zenith, so there is still gradation
+  bgHoriz: 0xfaf5ea,   // lifted cream horizon
+  bgFloor: 0xe4d9c4,   // deeper tan under the bench
+  accent:  0xd98a3f,   // amber — the light theme's existing accent family
+  keyCol:  0xfff4e2,   // warm white key
+  fillCol: 0xffe9d0,   // warm fill
+  rimCol:  0xe0c49c,   // soft tan rim, much closer in value than the dark theme's
+};
+
+// Per-theme values for everything that is not a plain colour swap.
+const THEME = {
+  dark: {
+    col: COL,
+    hemi:    { sky: 0xcfe0ff, ground: 0x0a0e15, intensity: 0.55 },
+    ambient: { color: 0xdfe8ff, intensity: 0.08 },
+    key: 2.6, fill: 0.55, rim: 1.1,
+    pool:    { color: 0xdaeaff, intensity: 55 },
+    softbox: 0xdfe8ff,
+    floor:   { base: 0x0b0f16, grid: 0x22303f },
+    bloom: { hi: 0.42, lo: 0.34 },
+    exposure: 1.02,
+  },
+  light: {
+    col: COL_LIGHT,
+    hemi:    { sky: 0xfff2dd, ground: 0xd8c9b0, intensity: 0.95 },
+    ambient: { color: 0xfff0dc, intensity: 0.34 },
+    key: 1.75, fill: 0.85, rim: 0.3,
+    pool:    { color: 0xffe6c4, intensity: 26 },
+    softbox: 0xfff4e6,
+    floor:   { base: 0xf3ede1, grid: 0xdcd0ba },
+    // Bloom is the thing that breaks a light theme. Emissive glow needs a dark
+    // ground to read as light; on cream it just fogs the image. Almost off.
+    bloom: { hi: 0.06, lo: 0.05 },
+    exposure: 0.98,
+  },
+};
+
 export function createScene(canvas) {
   const lowQ = isLowQuality();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowQ, powerPreference: 'high-performance' });
@@ -85,9 +135,9 @@ export function createScene(canvas) {
   };
 
   const envScene = new THREE.Scene();
-  const envDome = new THREE.Mesh(
-    new THREE.SphereGeometry(50, 32, 24),
-    new THREE.ShaderMaterial({ ...cloneShader(gradShader), side: THREE.BackSide, depthWrite: false }));
+  const envDomeMat = new THREE.ShaderMaterial({
+    ...cloneShader(gradShader), side: THREE.BackSide, depthWrite: false });
+  const envDome = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 24), envDomeMat);
   envScene.add(envDome);
   // a soft overhead softbox so metals get one clean, gentle highlight
   const envBox = new THREE.Mesh(
@@ -97,7 +147,10 @@ export function createScene(canvas) {
   envBox.rotation.x = Math.PI / 2;
   envScene.add(envBox);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(envScene, 0.04).texture;
+  // Remembered so setTheme() can tell "the studio env map I made" from "an HDRI
+  // the bench room installed", and only ever replace its own.
+  let ownedEnv = pmrem.fromScene(envScene, 0.04).texture;
+  scene.environment = ownedEnv;
 
   // 42° rather than a wide 55°: at bench scale a wide lens turns the parts into
   // specks in a room. The narrower lens compresses the scene and reads as a
@@ -315,9 +368,9 @@ export function createScene(canvas) {
   // ── graduated backdrop dome (the same gradient the env map uses) ──────────
   // No texture, no hard horizon — a seamless cool studio cyclorama. toneMapped
   // so it sits in the same colour space as the lit geometry.
-  const sky = new THREE.Mesh(
-    new THREE.SphereGeometry(900, 48, 32),
-    new THREE.ShaderMaterial({ ...cloneShader(gradShader), side: THREE.BackSide, depthWrite: false, fog: false }));
+  const skyMat = new THREE.ShaderMaterial({
+    ...cloneShader(gradShader), side: THREE.BackSide, depthWrite: false, fog: false });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 48, 32), skyMat);
   scene.add(sky);
 
   // Slot ghosts are gone with the pre-pivot fixed-chassis robot: the creator
@@ -367,7 +420,69 @@ export function createScene(canvas) {
   // own lighting has to switch it off explicitly or the two rigs sum, which
   // both over-exposes the scene and drags a cool blue cast across it.
   const studioLights = [studioHemi, studioAmbient, key, fill, rim, pool];
-  return { renderer, scene, camera, controls, slotMeshes, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights, frameObject };
+
+  /**
+   * Retune the entire 3D rig for a theme. Called at boot and whenever the
+   * topbar flips `data-theme`.
+   *
+   * The CSS shell has had a full light token set for a long time, but the 3D
+   * view ignored the theme completely — so switching produced a light UI wrapped
+   * around a permanently dark bench. Everything that carries the dark studio
+   * look is listed here: the visible backdrop dome, the environment map the
+   * metals reflect, all six lights, the floor shader, tone-mapping exposure and
+   * the bloom pass.
+   *
+   * The env map is re-baked rather than left alone. It is what every metal part
+   * reflects, so leaving a cool dark map under a cream sky makes the parts look
+   * grubby in a way that is hard to name but easy to see.
+   */
+  function setTheme(name) {
+    const t = THEME[name] === undefined ? THEME.dark : THEME[name];
+    const c = t.col;
+
+    scene.background = new THREE.Color(c.bgHoriz);
+    if (scene.fog) scene.fog.color.setHex(c.bgHoriz);
+
+    for (const mat of [skyMat, envDomeMat]) {
+      mat.uniforms.top.value.setHex(c.bgTop);
+      mat.uniforms.horiz.value.setHex(c.bgHoriz);
+      mat.uniforms.bottom.value.setHex(c.bgFloor);
+      mat.uniforms.accent.value.setHex(c.accent);
+    }
+    envBox.material.color.setHex(t.softbox);
+
+    studioHemi.color.setHex(t.hemi.sky);
+    studioHemi.groundColor.setHex(t.hemi.ground);
+    studioHemi.intensity = t.hemi.intensity;
+    studioAmbient.color.setHex(t.ambient.color);
+    studioAmbient.intensity = t.ambient.intensity;
+    key.color.setHex(c.keyCol);   key.intensity = t.key;
+    fill.color.setHex(c.fillCol); fill.intensity = t.fill;
+    rim.color.setHex(c.rimCol);   rim.intensity = t.rim;
+    pool.color.setHex(t.pool.color); pool.intensity = t.pool.intensity;
+
+    floorUniforms.uBase.value.setHex(t.floor.base);
+    floorUniforms.uGrid.value.setHex(t.floor.grid);
+    floorUniforms.uAccent.value.setHex(c.accent);
+
+    bloom.strength = lowQ ? t.bloom.lo : t.bloom.hi;
+    renderer.toneMappingExposure = t.exposure;
+
+    // Re-bake the reflections from the retinted dome — but ONLY if this studio
+    // env map is still the one in use. bench-room.js loads a Poly Haven HDRI and
+    // installs it as scene.environment; that IBL is the load-bearing part of how
+    // the room looks, and blindly overwriting it here flattened the whole scene
+    // (blown-out counter, shadows gone). If something else owns the environment,
+    // leave it alone.
+    if (scene.environment === null || scene.environment === ownedEnv) {
+      const baked = pmrem.fromScene(envScene, 0.04).texture;
+      if (ownedEnv) ownedEnv.dispose();
+      ownedEnv = baked;
+      scene.environment = baked;
+    }
+  }
+
+  return { renderer, scene, camera, controls, slotMeshes, resize, composer, floorUniforms, assemblyDecor, bloom, studioLights, frameObject, setTheme };
 }
 
 // Deep-clone the shared gradient shader's uniforms so each mesh (env dome +
