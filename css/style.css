@@ -528,6 +528,19 @@ body.is-phone #inspector { flex: 3 1 0; }
 #sound-btn:hover { border-color: var(--accent); color: var(--accent); }
 #sound-btn.muted { color: var(--text-dim); opacity: 0.7; }
 
+/* Ambient rain — sits in the same round-button row as help / sound / share.
+   Deliberately a separate control from mute: wanting rain while you work is a
+   different preference from wanting UI blips. */
+#ambient-btn {
+  position: absolute; bottom: 14px; left: 122px; z-index: 6;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--overlay); border: 1px solid var(--border); color: var(--text-dim);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px);
+}
+#ambient-btn:hover { border-color: var(--accent); color: var(--accent); }
+#ambient-btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+#ambient-btn.loading { opacity: 0.6; cursor: progress; }
+
 #share-btn {
   position: absolute; bottom: 14px; left: 86px; z-index: 6;
   width: 30px; height: 30px; border-radius: 50%;
