@@ -35,9 +35,14 @@ test('switching the theme retints the 3D scene, warm on light', async ({ page })
   const light = await page.evaluate(() => '#' + window.__view.scene.background.getHexString());
 
   const [r, g, b] = [1, 3, 5].map(i => parseInt(light.slice(i, i + 2), 16));
-  expect(r).toBeGreaterThan(220);        // it is bright
-  expect(r).toBeGreaterThan(b);          // and WARM — cream, not a cool white
-  expect(g).toBeGreaterThan(b);
+  // Warm, and deliberately NOT near-white. The first two attempts at this theme
+  // were too bright — the second sat at 0.81 luminance, brighter than any colour
+  // in the painting the palette is sampled from, whose lightest tone is 0.44.
+  // The band below keeps it a light theme while forbidding a return to glare.
+  expect(r).toBeGreaterThan(g);          // warm: red leads
+  expect(g).toBeGreaterThan(b);          // ...through green, down to blue
+  expect(r).toBeGreaterThan(150);        // still a LIGHT theme, not a dark one
+  expect(r).toBeLessThan(225);           // but not the near-white it used to be
 });
 
 test('theming does not overwrite the bench room’s HDRI environment', async ({ page }) => {

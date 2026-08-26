@@ -248,6 +248,32 @@ export function initBenchRoom({ scene, renderer, bloom, studioLights = [] } = {}
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(420, 320), wallMat);
   backWall.position.set(20, 60, -24.5); backWall.receiveShadow = true; decor.push(backWall);
 
+  // ── the Gandolfi, hung where you will actually see it ─────────────────────
+  // "Zeus with Hera Expelling Hephaestus" (public domain). The assistant is
+  // named after the god of the forge and this room's whole palette is sampled
+  // from this canvas, so the source hangs in the room rather than only existing
+  // as a set of hex values nobody can trace back. Loaded async off the same
+  // texture path as everything else; if it fails the wall is simply bare.
+  new THREE.TextureLoader().load('/assets/art/gandolfi-hephaestus.jpg', (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    const h = 34, w = h * (tex.image.width / tex.image.height);
+    const art = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, h),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.86, envMapIntensity: 0.5 }));
+    // a shallow gilt frame, so it reads as a hung object rather than a decal
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(w + 4.5, h + 4.5, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0x6b4a24, roughness: 0.5, metalness: 0.35 }));
+    const hung = new THREE.Group();
+    frame.position.z = -1.0;
+    hung.add(frame, art);
+    hung.position.set(-2, 38, -23.6);
+    hung.castShadow = true;
+    decor.push(hung);
+    group.add(hung);
+  }, undefined, () => { /* no art, bare wall — not worth failing the room over */ });
+
   const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(320, 320), wallMat);
   leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-57, 60, 40);
   leftWall.receiveShadow = true; decor.push(leftWall);
