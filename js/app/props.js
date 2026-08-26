@@ -12,13 +12,18 @@
 // it; when we don't hit a prop we do nothing and the normal handlers run.
 import * as THREE from 'three';
 
-// which sensor a prop influences, and how the sensor's resistance maps to it.
-const PROP_FOR = { thermistor: 'heat', photoresistor: 'light' };
+// Which sensor a *draggable* prop influences. The photoresistor is deliberately
+// NOT here any more: light now comes from the room's own desk lamp, which you
+// click to switch on and off (js/app/bench-room.js). A real lamp in the room
+// beats a second floating one, and it makes the light→resistance→current chain
+// a physical act — reach over, click the lamp, watch the current change.
+const PROP_FOR = { thermistor: 'heat' };
+const LIT_R = 8;          // photoresistor resistance with the lamp ON (Ω)
 const RANGE = 9;          // horizontal influence radius (world units / cm)
 const HOT_R = 8;          // resistance at full proximity (Ω) — circuit "on"
 const DRAG_Y = 3.2;       // hover height while dragging (above the bench)
 
-export function initProps({ scene, camera, canvas, controls, api, hud }) {
+export function initProps({ scene, camera, canvas, controls, api, hud, benchRoom }) {
   const raycaster = new THREE.Raycaster();
   const ptr = new THREE.Vector2();
   const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -DRAG_Y);
@@ -28,10 +33,7 @@ export function initProps({ scene, camera, canvas, controls, api, hud }) {
   root.name = 'benchProps';
   scene.add(root);
 
-  const props = {
-    heat: makeCandle(),
-    light: makeLamp(),
-  };
+  const props = { heat: makeCandle() };
   for (const k in props) { props[k].visible = false; root.add(props[k]); }
 
   let grabbed = null;      // the prop group currently being dragged
@@ -45,7 +47,28 @@ export function initProps({ scene, camera, canvas, controls, api, hud }) {
   }
 
   // capture-phase grab: only claims the event if the ray hits a visible prop.
+  /**
+   * A click on the desk lamp toggles it. Runs in the same capture phase as the
+   * prop drag so it claims the click before creator-assembly's orbit handler,
+   * and returns false when the lamp was not hit so everything else still works.
+   */
+  function tryLampClick(e) {
+    const targets = benchRoom?.lamp?.hitTargets?.() || [];
+    if (!targets.length) return false;
+    setPointer(e);
+    raycaster.setFromCamera(ptr, camera);
+    if (!raycaster.intersectObjects(targets, true).length) return false;
+    const on = benchRoom.lamp.toggle();
+    hud?.setStatus?.(on
+      ? 'Desk lamp on — a photoresistor on the bench sees the light'
+      : 'Desk lamp off — a photoresistor now reads dark');
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  }
+
   function onDown(e) {
+    if (tryLampClick(e)) return;
     setPointer(e);
     const vis = Object.values(props).filter(p => p.visible);
     const hit = raycaster.intersectObjects(vis, true)[0];
@@ -83,10 +106,10 @@ export function initProps({ scene, camera, canvas, controls, api, hud }) {
   // { id, type, mesh } for every thermistor / photoresistor currently placed.
   function tick(sensors, dt = 0.016) {
     t += dt;
-    const need = { heat: false, light: false };
+    const need = { heat: false };
     for (const s of sensors) { const k = PROP_FOR[s.type]; if (k) need[k] = true; }
 
-    for (const kind of ['heat', 'light']) {
+    for (const kind of ['heat']) {
       const prop = props[kind];
       const want = need[kind];
       if (want && !prop.visible) {
@@ -96,9 +119,7 @@ export function initProps({ scene, camera, canvas, controls, api, hud }) {
         prop.position.set(p.x + 7, DRAG_Y, p.z + 7);
         prop.visible = true;
         if (hintedFor !== kind) {
-          hud?.setStatus?.(kind === 'heat'
-            ? 'Drag the 🔥 candle up to the thermistor to heat it — watch the circuit react'
-            : 'Drag the 💡 lamp over the photoresistor to light it up — watch the circuit react');
+          hud?.setStatus?.('Drag the 🔥 candle up to the thermistor to heat it — watch the circuit react');
           hintedFor = kind;
         }
       } else if (!want && prop.visible) {
@@ -114,8 +135,19 @@ export function initProps({ scene, camera, canvas, controls, api, hud }) {
       props.heat.userData.flameMat.emissiveIntensity = 1.6 * f;
     }
 
-    // drive each sensor's resistance from the nearest matching prop's proximity
+    // Photoresistors read the room's desk lamp: switched on, the sensor is lit
+    // and its resistance collapses; switched off, it sits at its dark value.
+    // Binary rather than a proximity ramp because the lamp is a fixture — you
+    // flick it, you do not carry it around.
+    const lampOn = benchRoom?.lamp?.on !== false;
     for (const s of sensors) {
+      if (s.type === 'photoresistor') {
+        const doc = api.get_document();
+        const comp = doc.components.find(c => c.id === s.id);
+        const darkR = comp?.params?.maxResistance || 200000;
+        api.set_param_live?.({ id: s.id, key: 'resistance', value: lampOn ? LIT_R : darkR });
+        continue;
+      }
       const kind = PROP_FOR[s.type];
       const prop = props[kind];
       if (!prop || !prop.visible) continue;
@@ -166,18 +198,5 @@ function makeCandle() {
   return g;
 }
 
-function makeLamp() {
-  const g = new THREE.Group();
-  g.userData.prop = 'light';
-  const bulbMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff, emissive: 0xfff2c2, emissiveIntensity: 1.5, roughness: 0.25 });
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1.1, 20, 16), bulbMat);
-  const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.7, 0.9, 1.2, 18),
-    new THREE.MeshStandardMaterial({ color: 0x8a9099, metalness: 0.85, roughness: 0.3 }));
-  base.position.y = -1.4;
-  const glow = new THREE.PointLight(0xfff2c2, 0.9, 16, 2);
-  g.add(bulb, base, glow);
-  g.userData.bulbMat = bulbMat;
-  return g;
-}
+// makeLamp() lived here. The floating light prop was retired when the room's
+// own desk lamp became the switchable light source — see js/app/bench-room.js.

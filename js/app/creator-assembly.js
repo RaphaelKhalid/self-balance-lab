@@ -432,7 +432,7 @@ function pinTooltipHtml(id) {
          `<div class="tt-role">${info.role}</div><span class="unit">${id}</span>`;
 }
 
-export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud }) {
+export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud, benchRoom }) {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
 
@@ -1182,7 +1182,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud 
   // ── interactive bench props (candle → thermistor, lamp → photoresistor) ──
   // A physical input you drag near a sensor to change its resistance live. Only
   // shown while a matching sensor is on the bench; hidden in the RUN sim.
-  const props = initProps({ canvas, scene, camera, controls, api, hud });
+  const props = initProps({ canvas, scene, camera, controls, api, hud, benchRoom });
   subscribe('mode', (m) => { props.root.visible = m === 'assembly'; });
 
   function animate(dt) {
