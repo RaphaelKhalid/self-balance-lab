@@ -35,18 +35,24 @@ async function openApp(page) {
 // empty bench, and the test failed for reasons that had nothing to do with the
 // gesture. Poll until the body actually stops moving instead.
 async function waitUntilSettled(page, id) {
+  // THREE consecutive still samples, not one. A single pair can both look still
+  // during a slow headless frame while the body is actually still creeping, and
+  // then the gesture lands just off the part and removes nothing — which is
+  // exactly the intermittent failure this helper was added to kill.
   let last = null;
+  let stillRuns = 0;
   await expect.poll(async () => {
     const p = await page.evaluate(
       (cid) => window.__lab.assemblyApi.debugPositions()[cid], id);
-    if (!p) return false;
+    if (!p) { stillRuns = 0; return 0; }
     const still = last
-      && Math.abs(p[0] - last[0]) < 1e-3
-      && Math.abs(p[1] - last[1]) < 1e-3
-      && Math.abs(p[2] - last[2]) < 1e-3;
+      && Math.abs(p[0] - last[0]) < 1e-4
+      && Math.abs(p[1] - last[1]) < 1e-4
+      && Math.abs(p[2] - last[2]) < 1e-4;
+    stillRuns = still ? stillRuns + 1 : 0;
     last = p;
-    return Boolean(still);
-  }, { timeout: 20_000, intervals: [100] }).toBe(true);
+    return stillRuns;
+  }, { timeout: 25_000, intervals: [100] }).toBeGreaterThanOrEqual(3);
 }
 
 // screen-space centre of a placed part, from its live (physics-driven) mesh
@@ -136,7 +142,7 @@ test('a long press removes a part — the touch stand-in for right-click', async
     const opts = { clientX: x, clientY: y, pointerId: 1, pointerType: 'touch', isPrimary: true, bubbles: true };
     canvas.dispatchEvent(new PointerEvent('pointerdown', opts));
   }, pt);
-  await page.waitForTimeout(700);           // longer than the 500ms press
+  await page.waitForTimeout(1000);          // comfortably longer than the 500ms press
   await page.evaluate(({ x, y }) => {
     window.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y, pointerId: 1, pointerType: 'touch', bubbles: true }));
   }, pt);
@@ -167,6 +173,29 @@ test('a double tap rotates a part — the touch stand-in for the R key', async (
 
   const yawAfter = await page.evaluate(() => window.__api.get_document().components[0].transform.rot[1]);
   expect(yawAfter).not.toBe(yawBefore);
+});
+
+test('the Inspector survives the trip into the Circuit tab', async ({ page }) => {
+  // On desktop the Inspector lives in #right-panel, which a phone hides
+  // entirely (its RUN button moves to the bottom bar). So mobile.js carries the
+  // block into the Circuit tab — without that it would simply vanish on a phone,
+  // taking the only readout that explains the circuit with it.
+  await openApp(page);
+  await page.evaluate(() => {
+    const api = window.__api;
+    api.place_component({ type: 'battery', id: 'bat1' });
+    api.place_component({ type: 'motor', id: 'motor1' });
+    api.connect({ from: 'bat1.+', to: 'motor1.A' });
+    api.connect({ from: 'bat1.-', to: 'motor1.B' });
+  });
+
+  await page.tap('#mobile-bar .m-tab[data-sheet="circuit"]');
+  await expect(page.locator('#inspector')).toBeVisible();
+  // it is really inside the phone's circuit group, not merely on the page
+  expect(await page.evaluate(() =>
+    !!document.querySelector('[data-mgroup="circuit"] #inspector-block'))).toBe(true);
+  // and it is live, not a stub
+  await expect(page.locator('#inspector')).toContainText('motor1');
 });
 
 test.describe('desktop is untouched', () => {

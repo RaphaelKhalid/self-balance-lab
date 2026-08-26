@@ -83,12 +83,6 @@
     <div id="checklist">
       <p class="hint">Place all parts, then wire them together.</p>
     </div>
-    <header class="panel-header">
-      <span class="dot"></span> INSPECTOR
-    </header>
-    <div id="inspector">
-      <p class="hint">Place a battery and a motor, wire them, then hit RUN to watch it spin.</p>
-    </div>
   </aside>
 
   <!-- CENTER: 3D workspace -->
@@ -139,8 +133,22 @@
       <span class="dot dot-green"></span> SIMULATE — <span id="firmware-file">battery → motor</span>
       <button class="panel-min" data-panel="right-panel" aria-label="Minimize panel" title="Minimize">▾</button>
     </header>
-    <div id="run-hint">Place a <b>battery</b> and a <b>motor</b>, wire <span class="mono">+→A</span> and <span class="mono">−→B</span>, then hit <b>Run</b> to watch it spin. The Inspector (left) shows the solved current.</div>
+    <div id="run-hint">Place a <b>battery</b> and a <b>motor</b>, wire <span class="mono">+→A</span> and <span class="mono">−→B</span>, then hit <b>Run</b> to watch it spin. The Inspector below shows the solved current.</div>
     <button id="upload-btn"><i data-lucide="play"></i><span>RUN</span></button>
+    <!-- The Inspector lives here, not in the left column. The left column was
+         carrying three stacked, independently-scrolling sections while this
+         panel held a hint and a button; and this panel is already SIMULATE,
+         which is exactly what the Inspector reports on. js/app/mobile.js moves
+         this block into the phone's Circuit tab, because #right-panel is
+         display:none on a phone. -->
+    <div id="inspector-block">
+      <header class="panel-header">
+        <span class="dot"></span> INSPECTOR
+      </header>
+      <div id="inspector">
+        <p class="hint">Place a battery and a motor, wire them, then hit RUN to watch it spin.</p>
+      </div>
+    </div>
   </aside>
 
 </div>
