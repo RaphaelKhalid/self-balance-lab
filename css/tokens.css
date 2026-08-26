@@ -231,43 +231,50 @@
    LIGHT shell (the 3D canvas keeps its own scene lighting)
    ═══════════════════════════════════════════════════════════════════════ */
 :root[data-theme="light"] {
-  /* Warm CREAM ramp, not a cool white one. Pulling the blue out of a bright UI
-     is what a "night light" mode does, and this is a tool people stare at for
-     an hour at a time. It is also the differentiator: every competitor in
-     browser electronics is dark and techy, which reads "for engineers" — cream
-     reads "for learners". The hue holds all the way to --gray-12, so text is a
-     warm near-black rather than the blue-black that made this feel clinical. */
-  --gray-1: #faf6ee;  --gray-2: #fffdf8;  --gray-3: #f5f0e4;  --gray-4: #ece5d6;
-  --gray-5: #e1d9c8;  --gray-6: #d6ccb8;  --gray-7: #c1b49b;  --gray-8: #a89877;
-  --gray-9: #8a7c62;  --gray-10: #6b6151; --gray-11: #574f42; --gray-12: #26221b;
+  /* FORGE ramp — sampled from Gandolfi's "Zeus with Hera Expelling Hephaestus"
+     (public domain), which is apt twice over: the assistant is named after the
+     god of the forge, and that is him in the painting. Every colour in it is
+     warm — red-minus-blue runs +26 to +108 across the whole canvas — so it is
+     a principled source for a warm palette rather than a decorative one.
+
+     The previous cream was too bright: luminance 0.924, warmth (r-b) only 12.
+     This is 0.812 and 22. Chroma is kept low through the mid steps so borders
+     read as warm grey rather than mud; the saturation lives in the accent,
+     which is the painting's own sienna. Hue holds to --gray-12, so text is a
+     warm near-black, not the blue-black that made the first light theme feel
+     clinical. Every text step was checked against WCAG AA on both the
+     background and the panel. */
+  --gray-1: #f2e7dc;  --gray-2: #f9f4ee;  --gray-3: #ecded0;  --gray-4: #e3d2c0;
+  --gray-5: #d6c2ae;  --gray-6: #c9b39c;  --gray-7: #b2977b;  --gray-8: #9c7e5e;
+  --gray-9: #81674b;  --gray-10: #68523c; --gray-11: #4f3e2b; --gray-12: #2c2217;
 
   --bg: var(--gray-1);
   --panel: var(--gray-2);
   --panel-2: var(--gray-3);
   --panel-3: var(--gray-4);
   --panel-4: var(--gray-5);
-  --overlay: rgba(245, 240, 228, 0.85);
-  --overlay-strong: rgba(255, 253, 248, 0.95);
+  --overlay: rgba(242, 231, 220, 0.86);
+  --overlay-strong: rgba(249, 244, 238, 0.96);
   --border: var(--gray-6);
   --border-2: var(--gray-7);
   --border-focus: var(--gray-8);
   --text: var(--gray-12);
   --text-dim: var(--gray-11);
-  --text-faint: #7a6f5c;
+  --text-faint: #74624c;
 
   /* amber: bright hue kept for solid fills / 3D, burnt amber for text/icons (AA on white) */
-  --accent: #9a5800;                        /* burnt amber, ~5:1 on white */
-  --accent-hover: #b0680a;
-  --accent-text: #85500a;                   /* ~6:1 on white */
-  --amber-9: #ffb000;                       /* bright amber kept for fills / 3D */
-  --accent-dim: #ffe9c2;
-  --accent-glow: rgba(154, 88, 0, 0.22);
-  --accent-soft: rgba(154, 88, 0, 0.10);
+  --accent: #8a5230;                        /* the painting's sienna — 5.2:1 on the parchment */
+  --accent-hover: #a2643c;
+  --accent-text: #7a4526;                   /* 6.4:1 */
+  --amber-9: #b85c25;                       /* forge ember, for fills / 3D */
+  --accent-dim: #f0dcc6;
+  --accent-glow: rgba(138, 82, 48, 0.22);
+  --accent-soft: rgba(138, 82, 48, 0.10);
 
   /* secondary cyan: deepened so it stays legible on light surfaces */
-  --secondary: #0c7c8f;                     /* teal, AA on white */
-  --secondary-hover: #0e8ba0;
-  --secondary-text: #0a6b7c;
+  --secondary: #2f6d66;                     /* verdigris — the patina on forged copper */
+  --secondary-hover: #3a8179;
+  --secondary-text: #285d57;
   --secondary-dim: #cdeef2;
   --secondary-glow: rgba(12, 124, 143, 0.20);
   --secondary-soft: rgba(12, 124, 143, 0.09);
