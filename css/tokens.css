@@ -237,52 +237,57 @@
      warm — red-minus-blue runs +26 to +108 across the whole canvas — so it is
      a principled source for a warm palette rather than a decorative one.
 
-     The previous cream was too bright: luminance 0.924, warmth (r-b) only 12.
-     This is 0.812 and 22. Chroma is kept low through the mid steps so borders
+     Twice-corrected for brightness. The first cream was 0.924 luminance; the
+     second attempt was 0.812 and still too bright — brighter, in fact, than
+     ANY colour in the painting, whose lightest tone is 0.44. This background
+     is 0.448, sitting exactly at that lightest tone, so the UI finally lives
+     inside the source's own range instead of above it. A mid-tone background
+     squeezes contrast from both ends, so the accents were darkened until they
+     cleared AA against it rather than against a near-white. Chroma is kept low through the mid steps so borders
      read as warm grey rather than mud; the saturation lives in the accent,
      which is the painting's own sienna. Hue holds to --gray-12, so text is a
      warm near-black, not the blue-black that made the first light theme feel
      clinical. Every text step was checked against WCAG AA on both the
      background and the panel. */
-  --gray-1: #f2e7dc;  --gray-2: #f9f4ee;  --gray-3: #ecded0;  --gray-4: #e3d2c0;
-  --gray-5: #d6c2ae;  --gray-6: #c9b39c;  --gray-7: #b2977b;  --gray-8: #9c7e5e;
-  --gray-9: #81674b;  --gray-10: #68523c; --gray-11: #4f3e2b; --gray-12: #2c2217;
+  --gray-1: #c9ae92;  --gray-2: #d2bda7;  --gray-3: #c1a485;  --gray-4: #b99874;
+  --gray-5: #af8b64;  --gray-6: #a47e56;  --gray-7: #8b6c4b;  --gray-8: #775d40;
+  --gray-9: #644d35;  --gray-10: #513e2a; --gray-11: #3e2e1e; --gray-12: #231a10;
 
   --bg: var(--gray-1);
   --panel: var(--gray-2);
   --panel-2: var(--gray-3);
   --panel-3: var(--gray-4);
   --panel-4: var(--gray-5);
-  --overlay: rgba(242, 231, 220, 0.86);
-  --overlay-strong: rgba(249, 244, 238, 0.96);
+  --overlay: rgba(201, 174, 146, 0.88);
+  --overlay-strong: rgba(210, 189, 167, 0.97);
   --border: var(--gray-6);
   --border-2: var(--gray-7);
   --border-focus: var(--gray-8);
   --text: var(--gray-12);
   --text-dim: var(--gray-11);
-  --text-faint: #74624c;
+  --text-faint: #5d4a35;
 
   /* amber: bright hue kept for solid fills / 3D, burnt amber for text/icons (AA on white) */
-  --accent: #8a5230;                        /* the painting's sienna — 5.2:1 on the parchment */
-  --accent-hover: #a2643c;
-  --accent-text: #7a4526;                   /* 6.4:1 */
-  --amber-9: #b85c25;                       /* forge ember, for fills / 3D */
-  --accent-dim: #f0dcc6;
-  --accent-glow: rgba(138, 82, 48, 0.22);
-  --accent-soft: rgba(138, 82, 48, 0.10);
+  --accent: #5c3216;                        /* deep sienna — 5.2:1 on the dimmer ground */
+  --accent-hover: #74401d;
+  --accent-text: #4a2811;                   /* 6.3:1 */
+  --amber-9: #8f4718;                       /* forge ember — fills and 3D, not body text */
+  --accent-dim: #b99874;
+  --accent-glow: rgba(92, 50, 22, 0.24);
+  --accent-soft: rgba(92, 50, 22, 0.12);
 
   /* secondary cyan: deepened so it stays legible on light surfaces */
-  --secondary: #2f6d66;                     /* verdigris — the patina on forged copper */
-  --secondary-hover: #3a8179;
-  --secondary-text: #285d57;
-  --secondary-dim: #cdeef2;
+  --secondary: #17423d;                     /* verdigris — the patina on forged copper */
+  --secondary-hover: #1f544e;
+  --secondary-text: #123430;
+  --secondary-dim: #9fb5ac;
   --secondary-glow: rgba(12, 124, 143, 0.20);
   --secondary-soft: rgba(12, 124, 143, 0.09);
 
-  --edge-hi: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --edge-lo: inset 0 -1px 0 rgba(70, 55, 30, 0.07);
-  --glass-bg: linear-gradient(180deg, rgba(255,253,248,0.68), rgba(255,251,242,0.38));
-  --glass-border: rgba(70, 55, 30, 0.11);
+  --edge-hi: inset 0 1px 0 rgba(255, 250, 240, 0.30);
+  --edge-lo: inset 0 -1px 0 rgba(35, 26, 16, 0.16);
+  --glass-bg: linear-gradient(180deg, rgba(210,189,167,0.72), rgba(201,174,146,0.42));
+  --glass-border: rgba(35, 26, 16, 0.18);
   --glass-blur: saturate(120%) blur(12px);
 
   --btn-accent-grad: linear-gradient(180deg, #fff3dd, #ffe9c4);
