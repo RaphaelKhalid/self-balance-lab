@@ -15,7 +15,7 @@ export default [
         setInterval: 'readonly', clearInterval: 'readonly', fetch: 'readonly',
         AudioContext: 'readonly', OscillatorNode: 'readonly', CustomEvent: 'readonly',
         PointerEvent: 'readonly', MouseEvent: 'readonly',
-        CodeMirror: 'readonly', ResizeObserver: 'readonly', URL: 'readonly',
+        CodeMirror: 'readonly', ResizeObserver: 'readonly', MutationObserver: 'readonly', URL: 'readonly',
         process: 'readonly', Buffer: 'readonly',
       },
     },

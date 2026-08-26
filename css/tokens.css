@@ -231,24 +231,29 @@
    LIGHT shell (the 3D canvas keeps its own scene lighting)
    ═══════════════════════════════════════════════════════════════════════ */
 :root[data-theme="light"] {
-  /* neutral ramp inverts: 1 = lightest bg, 12 = darkest text */
-  --gray-1: #f6f8fc;  --gray-2: #ffffff;  --gray-3: #f2f5fa;  --gray-4: #e8ecf4;
-  --gray-5: #dde3ee;  --gray-6: #d3dae6;  --gray-7: #bfc8d8;  --gray-8: #a3aec2;
-  --gray-9: #86909f;  --gray-10: #667180; --gray-11: #566373; --gray-12: #171f2b;
+  /* Warm CREAM ramp, not a cool white one. Pulling the blue out of a bright UI
+     is what a "night light" mode does, and this is a tool people stare at for
+     an hour at a time. It is also the differentiator: every competitor in
+     browser electronics is dark and techy, which reads "for engineers" — cream
+     reads "for learners". The hue holds all the way to --gray-12, so text is a
+     warm near-black rather than the blue-black that made this feel clinical. */
+  --gray-1: #faf6ee;  --gray-2: #fffdf8;  --gray-3: #f5f0e4;  --gray-4: #ece5d6;
+  --gray-5: #e1d9c8;  --gray-6: #d6ccb8;  --gray-7: #c1b49b;  --gray-8: #a89877;
+  --gray-9: #8a7c62;  --gray-10: #6b6151; --gray-11: #574f42; --gray-12: #26221b;
 
   --bg: var(--gray-1);
   --panel: var(--gray-2);
   --panel-2: var(--gray-3);
   --panel-3: var(--gray-4);
   --panel-4: var(--gray-5);
-  --overlay: rgba(242, 245, 250, 0.85);
-  --overlay-strong: rgba(255, 255, 255, 0.95);
+  --overlay: rgba(245, 240, 228, 0.85);
+  --overlay-strong: rgba(255, 253, 248, 0.95);
   --border: var(--gray-6);
   --border-2: var(--gray-7);
   --border-focus: var(--gray-8);
   --text: var(--gray-12);
   --text-dim: var(--gray-11);
-  --text-faint: #78849a;
+  --text-faint: #7a6f5c;
 
   /* amber: bright hue kept for solid fills / 3D, burnt amber for text/icons (AA on white) */
   --accent: #9a5800;                        /* burnt amber, ~5:1 on white */
@@ -268,9 +273,9 @@
   --secondary-soft: rgba(12, 124, 143, 0.09);
 
   --edge-hi: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --edge-lo: inset 0 -1px 0 rgba(30, 40, 60, 0.06);
-  --glass-bg: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35));
-  --glass-border: rgba(30, 40, 60, 0.10);
+  --edge-lo: inset 0 -1px 0 rgba(70, 55, 30, 0.07);
+  --glass-bg: linear-gradient(180deg, rgba(255,253,248,0.68), rgba(255,251,242,0.38));
+  --glass-border: rgba(70, 55, 30, 0.11);
   --glass-blur: saturate(120%) blur(12px);
 
   --btn-accent-grad: linear-gradient(180deg, #fff3dd, #ffe9c4);
