@@ -154,10 +154,22 @@ export const SYSTEM_PROMPT = [
   // catalogue from it rather than restating it here, which is how this prompt
   // drifted into claiming a two-component world long after it had sixteen.
   `The component library is: ${Object.keys(LIBRARY).join(', ')}.`,
-  'The place_component tool\'s type enum is the authoritative list, and each',
-  'component\'s pin names come back from the tools — never guess a pin name.',
-  'A battery has pins "+" and "-"; a motor has "A" and "B". Current through a',
-  'closed battery→motor loop spins the motor; reversing the wires reverses it.',
+  // Pins are listed in FULL, derived from LIBRARY. This contract has no
+  // list_components and no get_build, so a model literally CANNOT look a pin
+  // name up — yet the prompt used to say pin names "come back from the tools"
+  // and then name only battery and motor. That is an instruction it cannot
+  // follow. Measured with bench/hephaestus-eval.mjs: it guessed "pot1.W" and
+  // "pot1.C" (wiper/common — right for a real potentiometer, wrong for this
+  // rheostat model) and burned turns on rejected connects. Deriving the table
+  // from LIBRARY costs no round-trip and cannot drift out of step.
+  'Components and their exact pin names. These are the only endpoints that',
+  'exist; an endpoint is written "componentId.pin":',
+  ...Object.entries(LIBRARY).map(
+    ([type, def]) => `  ${type}: ${def.pins.map(p => p.name).join(', ')}`),
+  '',
+  'Never invent a pin name. The potentiometer here is a rheostat with A and B —',
+  'it has no wiper. Current through a closed battery→motor loop spins the motor;',
+  'reversing the wires reverses it.',
   'Polar parts (LED, diode) only conduct one way, and an LED wired straight',
   'across a battery burns out — put a resistor in series.',
   '',
