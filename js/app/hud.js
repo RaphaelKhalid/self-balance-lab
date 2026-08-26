@@ -50,6 +50,30 @@ export function initHud({ wiring, onExitSim, onReset }) {
     try { window.lucide?.createIcons(); } catch {}
   }
   soundBtn.addEventListener('click', () => { audio.resume(); audio.setEnabled(!audio.enabled); renderSoundBtn(); });
+
+  // ── ambient rain ──────────────────────────────────────────────
+  // Separate from the mute toggle on purpose: someone who wants rain while they
+  // work does not necessarily want click blips, and vice versa. The 470KB loop
+  // is only fetched on the first switch-on, so this costs nothing until used.
+  const ambientBtn = document.getElementById('ambient-btn');
+  if (ambientBtn) {
+    const renderAmbient = () => {
+      ambientBtn.classList.toggle('on', audio.ambientOn);
+      ambientBtn.setAttribute('aria-pressed', audio.ambientOn ? 'true' : 'false');
+    };
+    ambientBtn.addEventListener('click', async () => {
+      const next = !audio.ambientOn;
+      if (next) ambientBtn.classList.add('loading');
+      await audio.setAmbient(next);
+      ambientBtn.classList.remove('loading');
+      renderAmbient();
+      // setAmbient clears ambientOn if the fetch failed, so this reads the truth
+      if (next && !audio.ambientOn) flash('Could not load the ambient track', 'warn');
+    });
+    // A remembered preference cannot auto-start (autoplay needs a gesture), so
+    // the button just shows as available and waits to be pressed.
+    renderAmbient();
+  }
   renderSoundBtn();
 
   // ── checklist ─────────────────────────────────────────────────

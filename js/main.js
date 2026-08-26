@@ -351,7 +351,7 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 for (const btn of document.querySelectorAll('.panel-min')) {
   btn.addEventListener('click', () => document.getElementById(btn.dataset.panel)?.classList.toggle('min'));
 }
-window.__lab = { assemblyApi, api, hud, hephaestus };   // debug/testing hook
+window.__lab = { assemblyApi, api, hud, hephaestus, audio };   // debug/testing hook
 track(EVENTS.LOAD);   // funnel entry — app booted
 
 // ── cloud account + sync ─────────────────────────────────────────
