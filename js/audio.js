@@ -1,6 +1,15 @@
 // Synthesized sound design (WebAudio, no samples — CSP-safe and tiny).
+//
+// One exception, added deliberately: the optional ambient rain loop. Rain is
+// broadband noise with structure that synthesised noise does not convincingly
+// fake, and it is opt-in and lazily fetched, so a visitor who never turns it on
+// pays nothing for it. Everything else here is still oscillators + envelopes.
 // Everything is generated from oscillators + envelopes. Must be resumed from a
 // user gesture (browser autoplay policy); call resume() on first interaction.
+
+const AMBIENT_URL = '/assets/audio/rain-loop.mp3';
+const AMBIENT_KEY = 'sbl-ambient';
+const AMBIENT_LEVEL = 0.22;   // background, not weather
 
 class Audio {
   constructor() {
@@ -8,7 +17,15 @@ class Audio {
     this.master = null;
     this.motor = null;                       // { osc, gain, filter }
     this.enabled = true;
-    try { this.enabled = localStorage.getItem('sbl-muted') !== '1'; } catch {}
+    try { this.enabled = localStorage.getItem('sbl-muted') !== '1'; } catch { /* ignore */ }
+    this.ambientOn = false;
+    this.ambientBuf = null;
+    this.ambientSrc = null;
+    this.ambientGain = null;
+    this.ambientLoading = null;
+    // Remembered, but NOT auto-started: autoplay policy needs a gesture, and
+    // starting rain unannounced on load would be startling anyway.
+    try { this.ambientWanted = localStorage.getItem(AMBIENT_KEY) === '1'; } catch { /* ignore */ }
   }
 
   resume() {
@@ -89,6 +106,48 @@ class Audio {
     if (!this.motor) return;
     try { this.motor.osc.stop(this.ctx.currentTime + 0.05); } catch {}
     this.motor = null;
+  }
+
+  // ── ambient loop (opt-in, lazily fetched) ─────────────────────────────
+  // The asset is only requested the first time this is switched on, so it costs
+  // a visitor who never wants it exactly zero bytes. It also rides its own gain
+  // node rather than the master, so it survives muting the UI sounds — someone
+  // wanting rain while working does not necessarily want click blips.
+  async setAmbient(on) {
+    this.ambientOn = on;
+    try { localStorage.setItem(AMBIENT_KEY, on ? '1' : '0'); } catch { /* private mode */ }
+    if (!on) {
+      if (this.ambientGain) this.ambientGain.gain.value = 0;
+      if (this.ambientSrc) { try { this.ambientSrc.stop(); } catch { /* already stopped */ } }
+      this.ambientSrc = null;
+      return;
+    }
+    this.resume();
+    if (!this.ctx) return;
+    if (!this.ambientBuf) {
+      if (this.ambientLoading) return this.ambientLoading;
+      this.ambientLoading = (async () => {
+        const res = await fetch(AMBIENT_URL);
+        if (!res.ok) throw new Error(`ambient ${res.status}`);
+        this.ambientBuf = await this.ctx.decodeAudioData(await res.arrayBuffer());
+      })();
+      try { await this.ambientLoading; } catch { this.ambientLoading = null; this.ambientOn = false; return; }
+      this.ambientLoading = null;
+    }
+    if (!this.ambientOn) return;          // switched off again while loading
+    if (!this.ambientGain) {
+      this.ambientGain = this.ctx.createGain();
+      this.ambientGain.connect(this.ctx.destination);   // NOT via master: see above
+    }
+    this.ambientGain.gain.value = AMBIENT_LEVEL;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.ambientBuf;
+    // Decoding to a buffer and looping here is what makes the loop gapless —
+    // an <audio> element re-seeking would tick audibly at the seam.
+    src.loop = true;
+    src.connect(this.ambientGain);
+    src.start();
+    this.ambientSrc = src;
   }
 }
 
