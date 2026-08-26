@@ -27,6 +27,28 @@ async function openApp(page) {
   await page.waitForTimeout(400);
 }
 
+// A part dropped on the bench falls under real Rapier gravity, so it is still
+// moving for a while after place_component returns. CLAUDE.md is explicit that
+// headless WebGL runs slower than real time and tests must poll rather than use
+// fixed waits — a fixed 900ms was a coin flip on a loaded CI runner, and when it
+// lost, screenPointOf aimed at where the part *had been*, the gesture landed on
+// empty bench, and the test failed for reasons that had nothing to do with the
+// gesture. Poll until the body actually stops moving instead.
+async function waitUntilSettled(page, id) {
+  let last = null;
+  await expect.poll(async () => {
+    const p = await page.evaluate(
+      (cid) => window.__lab.assemblyApi.debugPositions()[cid], id);
+    if (!p) return false;
+    const still = last
+      && Math.abs(p[0] - last[0]) < 1e-3
+      && Math.abs(p[1] - last[1]) < 1e-3
+      && Math.abs(p[2] - last[2]) < 1e-3;
+    last = p;
+    return Boolean(still);
+  }, { timeout: 20_000, intervals: [100] }).toBe(true);
+}
+
 // screen-space centre of a placed part, from its live (physics-driven) mesh
 async function screenPointOf(page, id) {
   return page.evaluate((compId) => {
@@ -106,7 +128,7 @@ test('tapping a part card places it on the bench and gets the sheet out of the w
 test('a long press removes a part — the touch stand-in for right-click', async ({ page }) => {
   await openApp(page);
   await page.evaluate(() => window.__api.place_component({ type: 'battery', id: 'bat1', transform: { pos: [4, 1, 2], rot: [0, 0, 0] } }));
-  await page.waitForTimeout(900);           // let it settle on the bench
+  await waitUntilSettled(page, 'bat1');
   const pt = await screenPointOf(page, 'bat1');
 
   await page.evaluate(({ x, y }) => {
@@ -125,7 +147,7 @@ test('a long press removes a part — the touch stand-in for right-click', async
 test('a double tap rotates a part — the touch stand-in for the R key', async ({ page }) => {
   await openApp(page);
   await page.evaluate(() => window.__api.place_component({ type: 'battery', id: 'bat1', transform: { pos: [4, 1, 2], rot: [0, 0, 0] } }));
-  await page.waitForTimeout(900);
+  await waitUntilSettled(page, 'bat1');
   const pt = await screenPointOf(page, 'bat1');
   const yawBefore = await page.evaluate(() => window.__api.get_document().components[0].transform.rot[1]);
 
