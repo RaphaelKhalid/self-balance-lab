@@ -341,7 +341,10 @@ export function initBenchRoom({ scene, renderer, bloom, studioLights = [] } = {}
     .then(track).catch((e) => console.warn(`[bench-room] ${name} skipped`, e));
   // deferred past `load` for the same reason as the HDRI — see whenIdle()
   whenIdle(() => {
-    for (const [name, at] of onCounter) drop(name, at, 0);
+    for (const [name, at] of onCounter) {
+      const p = drop(name, at, 0);
+      if (name === 'desk_lamp_arm_01') p.then((m) => { if (m) lampApi._adopt(m); });
+    }
     for (const [name, at] of onFloor) drop(name, at, -78);
   // The stationery set is 9 separate props authored side by side in one file, so
   // it gets picked apart too. Note picking keeps the originals' relative spacing,
@@ -387,9 +390,41 @@ export function initBenchRoom({ scene, renderer, bloom, studioLights = [] } = {}
   lampGlow.position.set(-34, 34, -10);
   group.add(lampGlow);
 
+  // ── the desk lamp is a switch, not scenery ────────────────────────────────
+  // Clicking it turns it off and on, and a photoresistor on the bench reads it
+  // (js/app/props.js). That makes the light→resistance→current chain a physical
+  // act in the room rather than a slider: reach over, click the lamp, watch the
+  // circuit change. LAMP_ON is the intensity the room was lit and tuned at, so
+  // switching back restores exactly the look the rest of the rig expects.
+  const LAMP_ON = 0.9;
+  let lampOn = true;
+  let lampModel = null;      // set when the glTF lands; may never, and that is fine
+  const lampApi = {
+    glow: lampGlow,
+    get on() { return lampOn; },
+    /** @returns {boolean} the new state */
+    setOn(next) {
+      lampOn = Boolean(next);
+      lampGlow.intensity = lampOn ? LAMP_ON : 0;
+      if (lampModel) {
+        lampModel.traverse((o) => {
+          if (o.isMesh && o.material && 'emissiveIntensity' in o.material) {
+            o.material.emissiveIntensity = lampOn ? 0.35 : 0;
+          }
+        });
+      }
+      return lampOn;
+    },
+    toggle() { return lampApi.setOn(!lampOn); },
+    /** Everything clickable that counts as "the lamp". */
+    hitTargets() { return lampModel ? [lampModel] : []; },
+    _adopt(model) { lampModel = model; lampApi.setOn(lampOn); },
+  };
+
   scene.add(group);
   return {
     group, props, bench, marbleY: 0, slab, placed,
+    lamp: lampApi,
     buildHalf: BUILD_HALF,
     // named so tests can assert per-surface expectations: `pbrSurfaces` must
     // carry ambientCG relief maps, all of them must carry a base colour.
