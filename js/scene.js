@@ -50,9 +50,9 @@ const COL_LIGHT = {
   // domain) so the 3D and the DOM share one source. The canvas is entirely
   // warm — red-minus-blue +26 to +108 — which is what makes it a principled
   // palette rather than a decorative reference.
-  bgTop:   0xe6d6c2,   // deeper ochre at the zenith, so there is real gradation
-  bgHoriz: 0xf2e7dc,   // the parchment the DOM uses for --gray-1
-  bgFloor: 0xd6c2ae,   // umber under the bench
+  bgTop:   0xb08f6d,   // deeper ochre at the zenith, so there is real gradation
+  bgHoriz: 0xc9ae92,   // the parchment the DOM uses for --gray-1
+  bgFloor: 0x9a7b58,   // umber under the bench
   accent:  0xb85c25,   // forge ember
   keyCol:  0xfff2e0,   // warm white key
   fillCol: 0xf7e3cc,   // warm fill
@@ -79,7 +79,7 @@ const THEME = {
     key: 1.75, fill: 0.85, rim: 0.3,
     pool:    { color: 0xffe6c4, intensity: 26 },
     softbox: 0xfff4e6,
-    floor:   { base: 0xefe2d4, grid: 0xd3c1ab },
+    floor:   { base: 0xc4a98c, grid: 0xa88a68 },
     // Bloom is the thing that breaks a light theme. Emissive glow needs a dark
     // ground to read as light; on cream it just fogs the image. Almost off.
     bloom: { hi: 0.06, lo: 0.05 },
