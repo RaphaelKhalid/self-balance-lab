@@ -3,14 +3,14 @@
 // On a desktop the app is a three-column cockpit: tray | bench | run panel. On a
 // phone that same grid stacked into three short rows and the bench — the whole
 // product — ended up a ~130px letterbox between two panels, with the controls
-// legend, the coach card, the Hephaestus pill and the three round canvas buttons all
+// legend, the coach card, the Hephaestus pill and the round canvas buttons all
 // piled on top of it. Nothing about that is fixable with a couple of width
 // tweaks, so phones get a different shell:
 //
 //   • the bench is full-bleed — it owns the screen, always
 //   • the tray / connections+inspector become a bottom SHEET, one tab at a time
 //   • RUN moves into a fixed bottom bar, next to the sheet tabs
-//   • the canvas' round buttons (help / sound / share) move into the top bar
+//   • the canvas' round buttons (help / sound / rain / share) move into the top bar
 //
 // It is a *layout* module: it moves existing nodes and toggles classes, and
 // never duplicates a control (a moved node keeps its listeners, so RUN is still
@@ -170,7 +170,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
     groupLeftPanel();
     buildBar();
     const upload = document.getElementById('upload-btn');
-    const canvasBtns = ['share-btn', 'sound-btn', 'help-btn'].map(id => document.getElementById(id));
+    const canvasBtns = ['ambient-btn', 'share-btn', 'sound-btn', 'help-btn'].map(id => document.getElementById(id));
     const actions = document.querySelector('.tb-actions');
     // remember where everything came from so leave() can put it back
     homes = [upload, ...canvasBtns].filter(Boolean)
