@@ -1,7 +1,7 @@
 {
   "name": "selfbalance-lab",
   "version": "1.0.0",
-  "description": "SelfBalance Lab — a browser robotics creator space. Build a robot from real components, wire the circuit, and watch a Rapier physics simulation run it. A natural-language assistant (Gemini) drives the same scriptable API the UI does.",
+  "description": "SelfBalance Lab \u2014 a browser robotics creator space. Build a robot from real components, wire the circuit, and watch a Rapier physics simulation run it. A natural-language assistant (Gemini) drives the same scriptable API the UI does.",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
@@ -10,7 +10,9 @@
     "serve": "node tests/server.mjs .",
     "mcp:dev": "mcp-use dev --entry mcp/server.js",
     "mcp:start": "node mcp/server.js",
-    "mcp:deploy": "mcp-use deploy --start-command \"node mcp/server.js\""
+    "mcp:deploy": "mcp-use deploy --start-command \"node mcp/server.js\"",
+    "bench": "node bench/run.mjs",
+    "bench:verify": "node bench/verify-tasks.mjs"
   },
   "repository": {
     "type": "git",

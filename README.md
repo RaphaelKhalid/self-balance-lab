@@ -1,72 +1,96 @@
 # SelfBalance Lab
 
-An interactive, web-based robotics **assembly simulator** for a self-balancing
-robot. Drag real components onto a chassis, wire the pins together, edit an
-Arduino PID sketch, and hit **Upload** to watch a Rapier physics robot try to
-balance itself.
+A browser electronics bench where the circuit is **actually solved**, not drawn.
 
-Built as a proof-of-concept MVP — no build step, no backend.
+Drag components onto a bench, wire them pin to pin, and a real DC circuit solver
+(Modified Nodal Analysis) works out the current in every branch — lighting LEDs
+in proportion to it, spinning motors from it, and flagging your shorts. Then hit
+**RUN** to drive the wired motor in a Rapier physics simulation.
 
-## Features
+Zero build step. Static files and ES modules, all dependencies from CDN.
 
-- **3D assembly** (Three.js) — 6 recognizable parts: Arduino Uno, MPU6050 IMU,
-  L298N driver, 2× DC gear motors, 7.4V LiPo. Drag from the tray; parts snap to
-  chassis slots.
-- **Wiring** — click a pin, then click its target. Wires render as 3D bezier
-  tubes, colored by type (red = power, black = ground, yellow = data). Valid
-  connections are recognized; hovering shows ✓/✗ with a hint. A live checklist
-  ticks off the 13 required connections.
-- **Firmware editor** (CodeMirror) — a realistic MPU6050 + L298N + PID sketch.
-  Edit the `Kp` / `Ki` / `Kd` gains and they are parsed live into the simulation.
-- **Auto-wire** — skip the manual step: **⚡ instant** places every part and
-  draws all 13 connections at once, or **▶ step-by-step** drops the parts and
-  adds each wire one at a time so you can watch the assembly come together.
-- **Physics** (Rapier) — once wiring is complete, Upload spawns a chrome
-  sphere-bot (camera dome, gripper arms, fat treaded wheels) balancing on two
-  wheels in a bright, walled **arena** with rolling hills. A JS PID loop reads
-  your gains and keeps it upright; well-tuned gains (≈ `Kp 15`, `Ki 140`,
-  `Kd 0.9`) hold it steady. Live tilt readout, angle sparkline, **Nudge**.
-- **Drive it (W/A/S/D)** — driving is the primary control: W/S drive, A/D
-  steer. A wheel-speed servo moves the bot while the PID keeps it balanced, and
-  a heading-hold keeps it straight. A follow-cam tracks it; perimeter walls keep
-  it in the arena; it holds station when you let go.
+**Live:** https://selfbalance-lab.vercel.app/
 
-- **Guided UX** — a first-run onboarding overlay (re-openable via the **?**
-  button) explains the four phases, and a top-center **stepper** (Assemble →
-  Wire → Program → Run) tracks progress. Hovering any component **?** or any 3D
-  pin pops a plain-language explanation ("what *is* IN2?"), and hovering a wire
-  explains the connection. **Clear board** resets the assembly.
-- **Custom assets** — parts are procedural by default, but you can drop
-  high-quality `.glb` models into `assets/models/` and register them in
-  `js/assets.js` (`MODEL_OVERRIDES`) to replace any part, one at a time.
+## Why it's different
 
-## Run locally
+Most browser circuit tools either draw a schematic or simulate a microcontroller.
+This one computes the electricity, and that has a consequence worth stating
+plainly: **you cannot bluff it.**
 
-It's all static files — serve the folder with anything:
+Put an LED straight across a 7.4 V battery and the solver reports 0.44 A and
+raises a short. Add the default 100 Ω resistor and it still passes 48 mA through
+a part rated for 30 — no violation, no warning, just a number that is wrong. You
+have to size the resistor. Physics decides, not a rubric and not a language model.
+
+The same property makes the build **agent-safe**: an assistant can only make the
+moves a human can, and the solver checks every one of them.
+
+## Try it
 
 ```bash
-npx serve .
-# or
-python -m http.server 8000
+npx serve .          # or: python -m http.server 8000
 ```
 
-Then open the printed URL. A modern browser with WebGL + WebAssembly is required.
+Needs WebGL and WebAssembly. Open the printed URL.
 
-## Tech
+- **Drag** a part from the tray onto the bench (parts fall and stack — real gravity)
+- **Click a pin, then another** to wire them
+- **Right-click** a wire or part to delete it · **R** rotates · **drag** to move
+- **Scroll a potentiometer knob** to change resistance and watch the current follow
+- **Drag the 💡 desk lamp** over a photoresistor, or the 🔥 candle over a thermistor
+- **RUN** drops the solved motor current into a physics sim
 
-Three.js · Rapier3D (WASM) · CodeMirror 5 · vanilla JS ES modules. All
-dependencies load from CDN via an import map — nothing to install.
+There's an example gallery (LED torch, motor dimmer, relay-switched motor,
+light- and heat-sensing circuits) and **Hephaestus**, a natural-language
+assistant that builds and wires circuits through the same API you do.
 
-## Layout
+## What's in here
 
+| Path | What it is |
+|---|---|
+| `js/sim/circuit.js` | The MNA solver. Pure maths — no THREE, no DOM |
+| `js/model/` | `RobotDoc v2` document + the 16-component library |
+| `js/api/index.js` | `window.__api` — the single mutation authority |
+| `js/app/` | The 3D bench, inspector, assistant, phone shell |
+| `mcp/` | MCP server exposing the solver + document to other agents |
+| `bench/` | A circuit benchmark for LLMs, graded by the solver |
+| `tests/` | Playwright suite |
+
+The solver and document layer import into Node unchanged, which is why `mcp/`
+and `bench/` can run the *identical* solver server-side rather than a second
+implementation that drifts.
+
+## Benchmark
+
+`bench/` runs a language model through the same tool surface a human uses and
+grades the result with the solver — no rubric, no LLM judge.
+
+```bash
+npm run bench:verify                     # free: proves every task is solvable
+npm run bench -- --provider openrouter   # needs OPENROUTER_API_KEY
 ```
-index.html        markup + CDN includes
-css/style.css     dark engineering theme
-js/scene.js       Three.js scene, lights, chassis, slots
-js/parts.js       component geometry + pin/slot definitions
-js/labels.js      canvas-texture text labels
-js/wiring.js      connection map, validation, 3D wires, checklist
-js/editor.js      CodeMirror sketch + Kp/Ki/Kd parser
-js/sim.js         Rapier inverted-pendulum + PID controller
-js/main.js        orchestrator (tray, drag, raycasting, HUD, loop)
+
+First result: `deepseek/deepseek-v4-flash` scored 27/29 blind (no solver
+feedback) for about two cents. See `bench/README.md` — including why that is a
+result *against* the hypothesis it was built to test.
+
+## Development
+
+```bash
+npm test          # Playwright, headless, software WebGL
+npm run test:mcp  # the solver + tool layer, no browser
+npm run lint
 ```
+
+Headless WebGL runs slower than real time, so tests poll state rather than using
+fixed waits. The one debug/authority hook is `window.__api`.
+
+## History
+
+This was a fixed self-balancing-robot curriculum. In the mid-2026 pivot that was
+**deliberately deleted** — the lessons, the guided flow, the CodeMirror firmware
+editor, the PID loop, the robot registry — and replaced with an open creator
+sandbox built on one mutation API and a real solver.
+
+So there is no balancing robot, no PID and no IMU here, and that is a decision
+rather than an omission. `CLAUDE.md` has the full architecture.
