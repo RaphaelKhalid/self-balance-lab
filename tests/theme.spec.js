@@ -58,3 +58,25 @@ test('theming does not overwrite the bench room’s HDRI environment', async ({ 
   const after = await page.evaluate(() => window.__view.scene.environment?.uuid || null);
   expect(after).toBe(before);
 });
+
+test('a first-time visitor gets cream, and a saved choice still wins', async ({ page }) => {
+  // Cream is the identity, so it must not be opt-in. It is set on <html> rather
+  // than applied by topbar.js, which also removes the flash of dark that used to
+  // happen while the module graph resolved.
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.__api, null, { timeout: 30_000 });
+  expect(await page.evaluate(
+    () => document.documentElement.getAttribute('data-theme'))).toBe('light');
+
+  // the 3D booted warm too, not just the DOM shell
+  const bg = await page.evaluate(() => '#' + window.__view.scene.background.getHexString());
+  const [r, b] = [1, 5].map(i => parseInt(bg.slice(i, i + 2), 16));
+  expect(r).toBeGreaterThan(b);
+
+  // someone who has actively chosen dark keeps dark
+  await page.evaluate(() => { try { localStorage.setItem('sbl-theme', 'dark'); } catch { /* ignore */ } });
+  await page.reload();
+  await page.waitForFunction(() => !!window.__api, null, { timeout: 30_000 });
+  expect(await page.evaluate(
+    () => document.documentElement.getAttribute('data-theme'))).toBe('dark');
+});

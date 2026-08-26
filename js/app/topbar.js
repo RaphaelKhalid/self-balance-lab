@@ -33,6 +33,9 @@ export function initTopbar({ getName, onRename } = {}) {
     root.setAttribute('data-theme', t);
     try { localStorage.setItem(THEME_KEY, t); } catch { /* ignore */ }
   }
+  // Cream is the DEFAULT now, set as data-theme="light" on <html> in index.html
+  // so the first paint is already warm. This only overrides it for someone who
+  // has actually picked a theme, so an existing visitor who chose dark keeps it.
   try {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved) root.setAttribute('data-theme', saved);
