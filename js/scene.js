@@ -46,13 +46,17 @@ const COL = {
 // and the rim light comes DOWN — dramatic separation is a dark-studio device and
 // looks dirty on cream.
 const COL_LIGHT = {
-  bgTop:   0xefe6d6,   // warm sand at the zenith, so there is still gradation
-  bgHoriz: 0xfaf5ea,   // lifted cream horizon
-  bgFloor: 0xe4d9c4,   // deeper tan under the bench
-  accent:  0xd98a3f,   // amber — the light theme's existing accent family
-  keyCol:  0xfff4e2,   // warm white key
-  fillCol: 0xffe9d0,   // warm fill
-  rimCol:  0xe0c49c,   // soft tan rim, much closer in value than the dark theme's
+  // Sampled from Gandolfi's "Zeus with Hera Expelling Hephaestus" (public
+  // domain) so the 3D and the DOM share one source. The canvas is entirely
+  // warm — red-minus-blue +26 to +108 — which is what makes it a principled
+  // palette rather than a decorative reference.
+  bgTop:   0xe6d6c2,   // deeper ochre at the zenith, so there is real gradation
+  bgHoriz: 0xf2e7dc,   // the parchment the DOM uses for --gray-1
+  bgFloor: 0xd6c2ae,   // umber under the bench
+  accent:  0xb85c25,   // forge ember
+  keyCol:  0xfff2e0,   // warm white key
+  fillCol: 0xf7e3cc,   // warm fill
+  rimCol:  0xd6b48c,   // soft tan rim, close in value — high-key wants no drama
 };
 
 // Per-theme values for everything that is not a plain colour swap.
@@ -75,7 +79,7 @@ const THEME = {
     key: 1.75, fill: 0.85, rim: 0.3,
     pool:    { color: 0xffe6c4, intensity: 26 },
     softbox: 0xfff4e6,
-    floor:   { base: 0xf3ede1, grid: 0xdcd0ba },
+    floor:   { base: 0xefe2d4, grid: 0xd3c1ab },
     // Bloom is the thing that breaks a light theme. Emissive glow needs a dark
     // ground to read as light; on cream it just fogs the image. Almost off.
     bloom: { hi: 0.06, lo: 0.05 },
