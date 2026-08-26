@@ -51,9 +51,19 @@ test('theming does not overwrite the bench room’s HDRI environment', async ({ 
   // what makes the room read — losing it blew out the counter and killed the
   // shadows. It must only ever replace an env map it created itself.
   await boot(page);
-  // wait for the room to finish installing its own environment
-  await page.waitForTimeout(2500);
-  const before = await page.evaluate(() => window.__view.scene.environment?.uuid || null);
+  // Wait for the environment to STOP changing rather than guessing at a
+  // duration. The room installs an HDRI asynchronously and the wall art loads on
+  // its own schedule too, so a fixed wait races whichever lands last — the same
+  // mistake the touch-gesture tests had.
+  let last = null;
+  let stable = 0;
+  await expect.poll(async () => {
+    const uuid = await page.evaluate(() => window.__view.scene.environment?.uuid || null);
+    stable = (uuid && uuid === last) ? stable + 1 : 0;
+    last = uuid;
+    return stable;
+  }, { timeout: 30_000, intervals: [250] }).toBeGreaterThanOrEqual(4);
+  const before = last;
 
   await setTheme(page, 'light');
   await page.waitForTimeout(500);
