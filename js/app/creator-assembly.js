@@ -24,37 +24,37 @@ import { partMat } from './part-materials.js';
 
 // tray metadata (name/desc/help) per library type — the human-facing card copy.
 const CARD = {
-  battery: { name: '7.4V LiPo', swatch: '#3d5a8f', desc: '2S battery pack',
+  battery: { name: 'Battery', icon: 'battery-charging', swatch: '#3d5a8f', desc: 'Gives your invention power',
     help: 'The power source. Its + and − terminals push current through whatever you wire across them.' },
-  motor: { name: 'DC Gear Motor', swatch: '#f0c020', desc: 'Geared motor + wheel',
+  motor: { name: 'Motor + Wheel', icon: 'settings', swatch: '#f0c020', desc: 'Turns electricity into motion',
     help: 'Current through A→B makes it spin. Reverse the wires and it spins the other way.' },
-  resistor: { name: 'Resistor', swatch: '#d8c9a0', desc: '100 Ω, in series',
+  resistor: { name: 'Resistor', icon: 'activity', swatch: '#d8c9a0', desc: 'Keeps current under control',
     help: 'Limits current. Put one in series with the motor and it draws less — the motor spins slower. Non-polar: either lead works.' },
-  switch: { name: 'Switch', swatch: '#7bd88f', desc: 'Break / make the loop',
+  switch: { name: 'Switch', icon: 'toggle-left', swatch: '#7bd88f', desc: 'Opens and closes the loop',
     help: 'Click the switch body to open or close the circuit. Open = no current = the motor stops.' },
-  led: { name: 'LED', swatch: '#ff5566', desc: 'Lights when current flows',
+  led: { name: 'LED', icon: 'lightbulb', swatch: '#ff5566', desc: 'Glows when current flows',
     help: 'Polar: current only flows anode (A, long leg) → cathode (K). Wire it the right way and it glows; backwards it stays dark. Needs a resistor in series or it burns out.' },
-  potentiometer: { name: 'Potentiometer', swatch: '#8fb3ff', desc: 'A knob you turn to vary resistance',
+  potentiometer: { name: 'Power Knob', icon: 'gauge', swatch: '#8fb3ff', desc: 'Turn it to change resistance',
     help: 'A variable resistor. Scroll on the knob (or edit R in the Inspector) to change its resistance live — turn it down and the motor speeds up / the LED brightens.' },
-  push_button: { name: 'Push Button', swatch: '#7bd88f', desc: 'Momentary tactile switch',
+  push_button: { name: 'Push Button', icon: 'circle-dot', swatch: '#7bd88f', desc: 'Works while you press it',
     help: 'A momentary switch — conducts only while pressed. Great for triggering an action on demand.' },
-  lamp: { name: 'Lamp', swatch: '#ffd27a', desc: 'Incandescent bulb',
+  lamp: { name: 'Lamp', icon: 'lamp-desk', swatch: '#ffd27a', desc: 'A warm, glowing bulb',
     help: 'A filament bulb. Non-polar: current either way heats the filament and it glows brighter the more current flows.' },
-  buzzer: { name: 'Buzzer', swatch: '#3a3f4a', desc: 'Piezo sounder',
+  buzzer: { name: 'Buzzer', icon: 'volume-2', swatch: '#3a3f4a', desc: 'Makes sound with electricity',
     help: 'Makes a tone when current flows through it. Wire it across a source to hear it buzz.' },
-  diode: { name: 'Diode', swatch: '#5a606c', desc: 'One-way current valve',
+  diode: { name: 'Diode', icon: 'arrow-right', swatch: '#5a606c', desc: 'Lets current go one way',
     help: 'Polar: current only flows anode (A) → cathode (K, the banded end). Blocks reverse current — a rectifier.' },
-  photoresistor: { name: 'Photoresistor', swatch: '#c9b063', desc: 'Light-dependent resistor',
+  photoresistor: { name: 'Light Sensor', icon: 'sun', swatch: '#c9b063', desc: 'Reacts to brightness',
     help: 'Its resistance drops as light hits its face. Non-polar — a light sensor for the circuit.' },
-  thermistor: { name: 'Thermistor', swatch: '#c86b4a', desc: 'Temperature-sensitive resistor',
+  thermistor: { name: 'Heat Sensor', icon: 'thermometer', swatch: '#c86b4a', desc: 'Reacts to temperature',
     help: 'Its resistance changes with temperature. Non-polar — a heat sensor for the circuit.' },
-  fuse: { name: 'Fuse', swatch: '#c9c9d0', desc: 'Overcurrent protection',
+  fuse: { name: 'Fuse', icon: 'shield-check', swatch: '#c9c9d0', desc: 'Protects the circuit',
     help: 'A thin link that carries current until it exceeds the rated limit — protects the rest of the circuit.' },
-  capacitor: { name: 'Capacitor', swatch: '#2a8f8f', desc: 'Stores charge',
+  capacitor: { name: 'Capacitor', icon: 'battery-medium', swatch: '#2a8f8f', desc: 'Stores a little charge',
     help: 'Stores and releases charge. Smooths and buffers a circuit; blocks steady DC once charged.' },
-  servo: { name: 'Servo', swatch: '#4d7bd8', desc: 'Positional motor',
+  servo: { name: 'Servo', icon: 'rotate-cw', swatch: '#4d7bd8', desc: 'Turns to an exact angle',
     help: 'A geared motor that holds a commanded angle. Three wires: power, ground, and a signal line.' },
-  relay: { name: 'Relay', swatch: '#3d5a8f', desc: 'Electrically-switched contact',
+  relay: { name: 'Relay', icon: 'workflow', swatch: '#3d5a8f', desc: 'A switch powered by a circuit',
     help: 'An electrically-operated switch: energising its coil throws a separate, higher-power contact.' },
 };
 
@@ -604,10 +604,11 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       card.className = 'part-card';
       card.dataset.type = type;
       card.dataset.category = cat;
+      card.style.setProperty('--part-color', meta.swatch);
       card.innerHTML = `
-        <div class="part-name"><span class="part-swatch" style="background:${meta.swatch}"></span>${meta.name}</div>
-        <div class="part-desc">${meta.desc}</div>
-        <span class="help-icon" title="">?</span>`;
+        <div class="part-visual"><i data-lucide="${meta.icon || 'box'}"></i></div>
+        <div class="part-copy"><div class="part-name">${meta.name}</div><div class="part-desc">${meta.desc}</div></div>
+        <span class="help-icon" title="" aria-label="About ${meta.name}">?</span>`;
       tray.appendChild(card);
       const help = card.querySelector('.help-icon');
       help.addEventListener('mouseenter', (e) => hud.showTooltip(e, meta.help));
@@ -620,6 +621,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       });
     }
     emptyMsg.hidden = shown > 0;
+    try { window.lucide?.createIcons(); } catch { /* icon rendering is best-effort */ }
   }
   renderTray();
 
@@ -628,10 +630,11 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
   function startDrag(type, e) {
     const meta = CARD[type] || { name: type, swatch: '#888' };
     const ghost = document.createElement('div');
-    ghost.className = 'part-card';
-    ghost.style.cssText = 'position:fixed;z-index:200;pointer-events:none;opacity:.85;width:200px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-    ghost.innerHTML = `<div class="part-name"><span class="part-swatch" style="background:${meta.swatch}"></span>${meta.name}</div>`;
+    ghost.className = 'part-card drag-ghost';
+    ghost.style.setProperty('--part-color', meta.swatch);
+    ghost.innerHTML = `<div class="part-visual"><i data-lucide="${meta.icon || 'box'}"></i></div><div class="part-name">${meta.name}</div>`;
     document.body.appendChild(ghost);
+    try { window.lucide?.createIcons(); } catch { /* icon rendering is best-effort */ }
     drag = { type, ghost };
     moveGhost(e);
     window.addEventListener('pointermove', onDragMove);

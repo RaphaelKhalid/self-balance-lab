@@ -20,6 +20,7 @@ import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
 import { initTopbar } from './app/topbar.js';
 import { initMobileUI } from './app/mobile.js';
+import { initProductMotion } from './app/motion.js';
 import { installErrorBoundary, isWebGLAvailable, showFatal } from './app/errors.js';
 import { migrateStorageKeys } from './app/storage.js';
 import { track, trackOnce, EVENTS, initAnalytics } from './app/analytics.js';
@@ -61,7 +62,7 @@ const { renderer, scene, camera, controls, resize, composer, floorUniforms, asse
 
 // ── keep the 3D rig in step with the theme ──────────────────────────────
 // topbar.js owns the toggle and writes data-theme on <html>; the 3D view used
-// to ignore it entirely, so light mode was a cream shell wrapped around a
+// to ignore it entirely, so light mode was a light shell wrapped around a
 // permanently dark bench. Observing the attribute rather than taking a callback
 // keeps the two modules unaware of each other — the topbar does not need to
 // know a scene exists, and anything else that flips the theme works too.
@@ -317,6 +318,7 @@ const mobileUI = initMobileUI({
   }),
 });
 window.__mobile = mobileUI;
+initProductMotion();
 
 // The legend teaches mouse verbs (right-click, R, scroll) that don't exist on a
 // touch screen. Coarse pointers get the gestures creator-assembly actually
@@ -437,7 +439,7 @@ async function doEnterSim() {
   camera.position.set(14, 12, 20);
   camera.lookAt(0, 6, 0);
   hud.simHud.classList.remove('hidden');
-  hud.setStatus('Running — motor speed follows the solved circuit');
+  hud.setStatus('It’s moving! Your circuit is powering real physics.');
   audio.startMotor();
   trackOnce(EVENTS.RUN_ENTER, { components: api.get_document().components.length });
 }

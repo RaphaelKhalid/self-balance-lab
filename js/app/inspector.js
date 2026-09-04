@@ -78,7 +78,8 @@ export function initInspector(api, { getMode } = {}) {
     const running = getMode ? getMode() === 'sim' : false;
 
     if (comps.length === 0) {
-      host.innerHTML = `<p class="insp-empty hint">Place a battery and a motor, wire them, then hit Upload to watch it spin.</p>`;
+      host.innerHTML = `<div class="insp-empty"><i data-lucide="cable"></i><b>Nothing connected yet</b><p>Add two parts and join their pins to see what the electricity is doing.</p></div>`;
+      try { window.lucide?.createIcons(); } catch { /* icons are best-effort */ }
       return;
     }
 
@@ -116,7 +117,7 @@ export function initInspector(api, { getMode } = {}) {
         ${paramsHtml(c)}
       </div>`;
     }).join('');
-    return `<div class="insp-sect"><div class="insp-h">COMPONENTS <span class="insp-count">${comps.length}</span></div>${rows}</div>`;
+    return `<div class="insp-sect"><div class="insp-h">YOUR PARTS <span class="insp-count">${comps.length}</span></div>${rows}</div>`;
   }
 
   // Editable param row(s) for one component — the tunable knobs from PARAM_META.
@@ -146,13 +147,13 @@ export function initInspector(api, { getMode } = {}) {
 
   function netsHtml(nets) {
     if (nets.length === 0) {
-      return `<div class="insp-sect"><div class="insp-h">NETS</div><p class="hint">Nothing wired yet.</p></div>`;
+      return `<div class="insp-sect"><div class="insp-h">WIRES</div><p class="hint">Connect two pins to make your first path.</p></div>`;
     }
     const rows = nets.map((n) => `<div class="insp-net">
       <span class="insp-swatch" style="background:${esc(n.color || '#888')}"></span>
       <span class="insp-eps">${n.endpoints.map(esc).join(' · ')}</span>
     </div>`).join('');
-    return `<div class="insp-sect"><div class="insp-h">NETS <span class="insp-count">${nets.length}</span></div>${rows}</div>`;
+    return `<div class="insp-sect"><div class="insp-h">WIRES <span class="insp-count">${nets.length}</span></div>${rows}</div>`;
   }
 
   // Plain-language coaching for each violation code — the "why + what to do".
@@ -172,7 +173,7 @@ export function initInspector(api, { getMode } = {}) {
   function violationsHtml(elec) {
     const vs = elec.violations || [];
     if (vs.length === 0) {
-      return `<div class="insp-sect"><div class="insp-ok"><span class="insp-ok-mark">✓</span> Circuit OK</div></div>`;
+      return `<div class="insp-sect"><div class="insp-ok"><span class="insp-ok-mark">✓</span><span><b>Looking good</b><small>Circuit OK — no safety problems.</small></span></div></div>`;
     }
     const errN = vs.filter(v => (v.level || 'warn') === 'error').length;
     const summary = errN

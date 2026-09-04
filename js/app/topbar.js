@@ -16,9 +16,8 @@ export function initTopbar({ getName, onRename } = {}) {
 
   bar.innerHTML = `
     <div class="tb-brand">
-      <span class="tb-mark" aria-hidden="true">◐</span>
-      <span class="tb-name">SELFBALANCE LAB</span>
-      <span class="tb-sub">Robotics Creator</span>
+      <span class="tb-mark" aria-hidden="true"><i data-lucide="sparkles"></i></span>
+      <span class="tb-lockup"><span class="tb-name">SelfBalance</span><span class="tb-sub">Inventor Studio</span></span>
     </div>
     <button class="tb-robot" id="tb-robot" title="Rename this build"><span class="tb-dot"></span><span id="tb-robot-name">Bench</span></button>
     <div class="tb-actions">
@@ -33,8 +32,8 @@ export function initTopbar({ getName, onRename } = {}) {
     root.setAttribute('data-theme', t);
     try { localStorage.setItem(THEME_KEY, t); } catch { /* ignore */ }
   }
-  // Cream is the DEFAULT now, set as data-theme="light" on <html> in index.html
-  // so the first paint is already warm. This only overrides it for someone who
+  // Light is the default, set in index.html so the first paint is already right.
+  // This only overrides it for someone who
   // has actually picked a theme, so an existing visitor who chose dark keeps it.
   try {
     const saved = localStorage.getItem(THEME_KEY);

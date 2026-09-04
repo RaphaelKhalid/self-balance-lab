@@ -108,10 +108,12 @@ export function initHud({ wiring, onExitSim, onReset }) {
   simHud.id = 'sim-hud';
   simHud.className = 'hidden';
   simHud.innerHTML = `
-    <div class="sim-title">MOTOR TEST</div>
+    <div class="sim-kicker">IT WORKS!</div>
+    <div class="sim-title">Your invention is moving</div>
+    <p>Its speed comes from the circuit you built.</p>
     <div class="sim-buttons">
       <button id="reset-btn"><i data-lucide="rotate-ccw"></i><span>Reset</span></button>
-      <button id="back-btn"><i data-lucide="arrow-left"></i><span>Bench</span></button>
+      <button id="back-btn"><i data-lucide="arrow-left"></i><span>Keep building</span></button>
     </div>`;
   document.getElementById('workspace').appendChild(simHud);
   simHud.querySelector('#reset-btn').addEventListener('click', () => onReset?.());
