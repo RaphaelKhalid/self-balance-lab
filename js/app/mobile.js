@@ -21,8 +21,8 @@ import { subscribe } from './state.js';
 const PHONE_MQ = '(max-width: 820px)';
 const TABS = [
   { id: 'parts', label: 'Parts', icon: 'boxes' },
-  { id: 'circuit', label: 'Circuit', icon: 'activity' },
-  { id: 'hephaestus', label: 'Hephaestus', icon: 'sparkles' },
+  { id: 'circuit', label: 'Science', icon: 'activity' },
+  { id: 'hephaestus', label: 'Build buddy', icon: 'sparkles' },
 ];
 
 export function initMobileUI({ onLayoutChange } = {}) {
@@ -35,6 +35,7 @@ export function initMobileUI({ onLayoutChange } = {}) {
   let bar = null;          // the fixed bottom bar (built once, reused)
   let open = null;         // id of the open sheet, or null
   let homes = null;        // original parents/next-siblings, for tearing down
+  let assistantHome = null;
 
   // ── viewport height ──────────────────────────────────────────
   // 100dvh is right on modern browsers; --app-h is the fallback for the ones
@@ -169,6 +170,11 @@ export function initMobileUI({ onLayoutChange } = {}) {
     borrowInspector();   // must run BEFORE grouping so it lands in the circuit group
     groupLeftPanel();
     buildBar();
+    const assistant = document.getElementById('hephaestus');
+    if (assistant) {
+      assistantHome = { parent: assistant.parentNode, next: assistant.nextSibling };
+      body.appendChild(assistant); // escape #right-panel, which is hidden on phones
+    }
     const upload = document.getElementById('upload-btn');
     const canvasBtns = ['ambient-btn', 'share-btn', 'sound-btn', 'help-btn'].map(id => document.getElementById(id));
     const actions = document.querySelector('.tb-actions');
@@ -195,6 +201,10 @@ export function initMobileUI({ onLayoutChange } = {}) {
     closeSheet();
     for (const { el, parent, next } of homes || []) parent?.insertBefore(el, next);
     homes = null;
+    if (assistantHome) {
+      assistantHome.parent?.insertBefore(document.getElementById('hephaestus'), assistantHome.next);
+      assistantHome = null;
+    }
     returnInspector();   // hand it back to #right-panel for the desktop layout
     onLayoutChange?.('leave');
   }

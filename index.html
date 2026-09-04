@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- data-theme is set HERE, not in JS, so the very first paint is already cream.
+<!-- data-theme is set HERE, not in JS, so the very first paint is already light.
      Applying it from topbar.js meant a flash of the dark theme on every load
      while the module graph resolved. topbar.js still overrides this from
      localStorage for anyone who has actively chosen a theme. -->
@@ -12,8 +12,8 @@
 <title>SelfBalance Lab — Robotics Creator</title>
 <meta name="description" content="Build a robot from real components in your browser, wire the circuit, and watch a physics simulation run it. A natural-language assistant builds alongside you. Zero install.">
 <!-- theme-color: dark UI chrome; media-scoped so a light-theme browser UI matches too -->
-<meta name="theme-color" content="#0a0d12" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#0a0d12" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c1230" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#edf2ff" media="(prefers-color-scheme: light)">
 <!-- iOS standalone / installable web-app polish -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -68,17 +68,20 @@
   <!-- LEFT: parts tray + checklist -->
   <aside id="left-panel">
     <header class="panel-header">
-      <span class="dot"></span> PARTS TRAY
+      <span class="panel-icon"><i data-lucide="blocks"></i></span>
+      <span class="panel-heading"><span class="panel-kicker">BUILD</span><span class="panel-title">Pick your parts</span></span>
       <button class="panel-min" data-panel="left-panel" aria-label="Minimize parts tray" title="Minimize">▾</button>
     </header>
+    <p class="panel-intro">Drag a part into the room. Start simple—you can’t break anything here.</p>
     <div id="auto-bar">
       <button id="auto-instant" class="auto-btn"><i data-lucide="zap"></i><span>Auto-wire (instant)</span></button>
       <button id="auto-step" class="auto-btn"><i data-lucide="list-ordered"></i><span>Auto-wire (step-by-step)</span></button>
     </div>
-    <button id="clear-btn"><i data-lucide="rotate-ccw"></i><span>Clear board</span></button>
+    <button id="clear-btn"><i data-lucide="rotate-ccw"></i><span>Start over</span></button>
     <div id="parts-tray"></div>
     <header class="panel-header">
-      <span class="dot dot-yellow"></span> CONNECTIONS
+      <span class="panel-icon is-yellow"><i data-lucide="cable"></i></span>
+      <span class="panel-heading"><span class="panel-kicker">CONNECTIONS</span><span class="panel-title">Make a loop</span></span>
     </header>
     <div id="checklist">
       <p class="hint">Place all parts, then wire them together.</p>
@@ -88,7 +91,7 @@
   <!-- CENTER: 3D workspace -->
   <main id="workspace">
     <div id="workspace-hud">
-      <span id="hud-status" role="status" aria-live="polite">Drag parts from the tray onto the chassis</span>
+      <i data-lucide="sparkles" aria-hidden="true"></i><span id="hud-status" role="status" aria-live="polite">Drag in a part and make something happen</span>
     </div>
     <!-- First-run coach: a 5-step "build your first circuit" checklist that
          advances by watching real app state. Hidden once completed (persisted). -->
@@ -104,7 +107,7 @@
     <button id="sound-btn" title="Toggle sound" aria-label="Toggle sound"><i data-lucide="volume-2"></i></button>
     <button id="ambient-btn" title="Ambient rain" aria-label="Toggle ambient rain" aria-pressed="false"><i data-lucide="cloud-rain"></i></button>
     <div id="controls-legend">
-      <div class="lg-title">CONTROLS</div>
+      <div class="lg-title">QUICK MOVES</div>
       <div><b>Drag</b> a part in · <b>drag</b> a placed part to move · <b>R</b> to rotate it</div>
       <div><b>Click</b> a pin then its target pin to wire them</div>
       <div><b>Right-click</b> a part or wire to remove it · empty-space drag orbits</div>
@@ -112,18 +115,6 @@
     <!-- touch-action:none + inline overscroll guard so Safari never turns a 3D drag/orbit/pinch
      into page scroll or rubber-band; CSS agent can move this to the stylesheet later. -->
 <canvas id="three-canvas" style="touch-action:none; -webkit-user-select:none; user-select:none;"></canvas>
-    <!-- Hephaestus: natural-language build assistant (M2). Talks to /api/hephaestus;
-         acts only through window.__api. -->
-    <div id="hephaestus" class="collapsed">
-      <button id="hephaestus-toggle" aria-label="Toggle Hephaestus"><i data-lucide="sparkles"></i><span>Hephaestus</span></button>
-      <div id="hephaestus-panel">
-        <div id="hephaestus-log"><div class="hp-msg hp-bot">Hi — I'm Hephaestus. Tell me what to build, e.g. “wire the battery to the motor and run it.”</div></div>
-        <form id="hephaestus-form">
-          <input id="hephaestus-input" type="text" placeholder="Ask Hephaestus…" autocomplete="off" />
-          <button type="submit" aria-label="Send"><i data-lucide="arrow-up"></i></button>
-        </form>
-      </div>
-    </div>
   </main>
 
   <!-- RIGHT: run panel. The CodeMirror firmware editor and Serial Monitor that
@@ -131,11 +122,28 @@
        controller was JS), so they showed code that did nothing. Gone. -->
   <aside id="right-panel">
     <header class="panel-header">
-      <span class="dot dot-green"></span> SIMULATE — <span id="firmware-file">battery → motor</span>
+      <span class="panel-icon"><i data-lucide="message-square"></i></span>
+      <span class="panel-heading"><span class="panel-kicker">ASSISTANT</span><span class="panel-title">Hephaestus</span></span>
+      <span id="firmware-file" class="sr-only">battery → motor</span>
       <button class="panel-min" data-panel="right-panel" aria-label="Minimize panel" title="Minimize">▾</button>
     </header>
-    <div id="run-hint">Place a <b>battery</b> and a <b>motor</b>, wire <span class="mono">+→A</span> and <span class="mono">−→B</span>, then hit <b>Run</b> to watch it spin. The Inspector below shows the solved current.</div>
-    <button id="upload-btn"><i data-lucide="play"></i><span>RUN</span></button>
+    <!-- Hephaestus is the primary desktop sidebar. On phones, mobile.js presents
+         this same node as its own bottom sheet, preserving every listener. -->
+    <div id="hephaestus" class="collapsed">
+      <button id="hephaestus-toggle" aria-label="Toggle Hephaestus"><i data-lucide="sparkles"></i><span>Open assistant</span></button>
+      <div id="hephaestus-panel">
+        <div class="hp-head"><span class="hp-avatar"><i data-lucide="bot"></i></span><span><b>Build with Hephaestus</b><small>Describe it. He’ll place and wire the parts.</small></span></div>
+        <div id="hephaestus-log"><div class="hp-msg hp-bot">What do you want to build? Try “make a light I can switch on.”</div></div>
+        <form id="hephaestus-form">
+          <input id="hephaestus-input" type="text" placeholder="Describe an invention…" autocomplete="off" />
+          <button type="submit" aria-label="Send"><i data-lucide="arrow-up"></i></button>
+        </form>
+      </div>
+    </div>
+    <section id="run-tools" aria-label="Test controls">
+      <div id="run-hint"><b>Test the build</b><span>The live circuit is ready when you are.</span></div>
+      <button id="upload-btn"><span class="run-icon"><i data-lucide="play"></i></span><span>RUN</span></button>
+    </section>
     <!-- The Inspector lives here, not in the left column. The left column was
          carrying three stacked, independently-scrolling sections while this
          panel held a hint and a button; and this panel is already SIMULATE,
@@ -144,7 +152,8 @@
          display:none on a phone. -->
     <div id="inspector-block">
       <header class="panel-header">
-        <span class="dot"></span> INSPECTOR
+        <span class="panel-icon is-mint"><i data-lucide="activity"></i></span>
+        <span class="panel-heading"><span class="panel-kicker">CIRCUIT</span><span class="panel-title">Live readout</span></span>
       </header>
       <div id="inspector">
         <p class="hint">Place a battery and a motor, wire them, then hit RUN to watch it spin.</p>
@@ -158,16 +167,16 @@
 <!-- onboarding (hidden by default; hud.js reveals it for first-time visitors so it never paints-then-hides) -->
 <div id="overlay" class="hidden">
   <div class="card">
-    <div class="ov-mark"><span aria-hidden="true">◐</span> SELFBALANCE LAB</div>
-    <h1>Build electronics that actually work</h1>
-    <div class="tagline">Drag parts onto the bench, wire them pin to pin, and a real circuit solver lights the LEDs, spins the motors and catches your shorts — no install, right in your browser.</div>
+    <div class="ov-mark"><i data-lucide="sparkles" aria-hidden="true"></i> SELFBALANCE LAB</div>
+    <h1>What will you invent today?</h1>
+    <div class="tagline">Build with real electronic parts, connect them your way, and see the science come alive—right in your browser.</div>
     <div class="ov-beats">
-      <div class="ov-beat"><span class="ov-n">01</span><b>Build</b><p>Drag parts onto the bench — they fall, collide and settle.</p></div>
-      <div class="ov-beat"><span class="ov-n">02</span><b>Wire</b><p>Click a pin, then its target. The solver runs as you go.</p></div>
-      <div class="ov-beat"><span class="ov-n">03</span><b>Run</b><p>Hit RUN and watch the current drive real physics.</p></div>
+      <div class="ov-beat"><span class="ov-n"><i data-lucide="lightbulb"></i></span><b>Imagine</b><p>Pick an idea or dream up your own.</p></div>
+      <div class="ov-beat"><span class="ov-n"><i data-lucide="blocks"></i></span><b>Build</b><p>Place parts and connect them into a loop.</p></div>
+      <div class="ov-beat"><span class="ov-n"><i data-lucide="rocket"></i></span><b>Discover</b><p>Run it, notice what changes, and try again.</p></div>
     </div>
-    <button class="start" id="overlay-start">Start building →</button>
-    <button class="tour" id="overlay-tour">Or ask Hephaestus to build it for you</button>
+    <button class="start" id="overlay-start">Open my invention desk <i data-lucide="arrow-right"></i></button>
+    <button class="tour" id="overlay-tour">Or build with Hephaestus ✨</button>
   </div>
 </div>
 

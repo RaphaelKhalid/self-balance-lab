@@ -126,8 +126,8 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
   const btn = document.createElement('button');
   btn.id = 'examples-btn';
   btn.type = 'button';
-  btn.title = 'Load an example circuit';
-  btn.innerHTML = `<span aria-hidden="true">⚡</span><span>Examples</span>`;
+  btn.title = 'Try an invention idea';
+  btn.innerHTML = `<i data-lucide="lightbulb"></i><span>Idea shelf</span>`;
   workspace.appendChild(btn);
 
   // popover panel
@@ -135,11 +135,11 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
   panel.id = 'examples-panel';
   panel.className = 'hidden';
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Example circuits');
+  panel.setAttribute('aria-label', 'Invention ideas');
 
   const tiers = [...new Set(EXAMPLES.map(e => e.tier))];
   panel.innerHTML =
-    `<div class="ex-head"><b>Example circuits</b>` +
+    `<div class="ex-head"><span><small>NEED A SPARK?</small><b>Try an invention</b></span>` +
     `<button class="ex-close" aria-label="Close">✕</button></div>` +
     `<div class="ex-body">` +
     tiers.map(tier =>
@@ -151,6 +151,7 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
       `</div>`).join('') +
     `</div>`;
   workspace.appendChild(panel);
+  try { window.lucide?.createIcons(); } catch { /* icons are best-effort */ }
 
   function open() { panel.classList.remove('hidden'); }
   function close() { panel.classList.add('hidden'); }

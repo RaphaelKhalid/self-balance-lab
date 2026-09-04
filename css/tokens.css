@@ -1,36 +1,25 @@
 /* ══════════════════════════════════════════════════════════════════════
-   SelfBalance Lab — design tokens
+   SelfBalance Lab — utility workspace design tokens
    Single source of truth for color, type, space, radius, elevation, motion,
-   and z-index. One coherent "scientific instrument" system that BOTH themes
-   derive from. Dark is the product default (matches the bloom aesthetic);
-   `data-theme="light"` on <html> reskins the DOM shell.
-
-   Palette intent:
-   • AMBER (phosphor) — the signature accent. CRT/nixie lineage, kept but made
-     deliberate: one true accent hue, with a full ramp so borders, tints, text
-     and glows all share it.
-   • IRIDIUM CYAN — the secondary/instrument accent. A cool teal-cyan that reads
-     as "measurement / live signal" and pairs with amber the way a scope trace
-     pairs with a warm bezel. Used for links-in-data, gauges, active telemetry.
-   • Neutrals are a 12-step blue-slate ramp. In dark mode, elevation is
-     *lightness* (each panel layer steps up the ramp), not just shadow.
+   and z-index. Neutral application chrome keeps attention on the 3D bench and
+   assistant; blue is reserved for actions, selection and live information.
    All text pairings target WCAG AA (≥4.5:1 body, ≥3:1 large) in BOTH themes.
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Neutral ramp (blue-slate) — Radix-style 12 steps ───────────────── */
-  --gray-1:  #090c11;  /* app bg                */
-  --gray-2:  #0e121a;  /* subtle bg / panel     */
-  --gray-3:  #141924;  /* component bg          */
-  --gray-4:  #1a212d;  /* component hover       */
-  --gray-5:  #212a38;  /* component active      */
-  --gray-6:  #2b3444;  /* border subtle         */
-  --gray-7:  #364155;  /* border normal         */
-  --gray-8:  #46536b;  /* border focus/hover    */
-  --gray-9:  #5d6d86;  /* solid (rare in dark)  */
-  --gray-10: #737f93;  /* solid hover / captions (≥3:1) */
-  --gray-11: #9aa5b6;  /* low-contrast text (AA on 1–4) */
-  --gray-12: #e7ebf3;  /* high-contrast text    */
+  --gray-1:  #111315;
+  --gray-2:  #17191c;
+  --gray-3:  #1d2024;
+  --gray-4:  #24282d;
+  --gray-5:  #2c3137;
+  --gray-6:  #383e46;
+  --gray-7:  #484f59;
+  --gray-8:  #5d6672;
+  --gray-9:  #747e8c;
+  --gray-10: #9099a5;
+  --gray-11: #b6bdc6;
+  --gray-12: #f1f3f5;
 
   /* ── Surfaces (aliases → ramp; legacy names preserved) ──────────────── */
   --bg: var(--gray-1);
@@ -49,7 +38,7 @@
   --text-dim: var(--gray-11);            /* muted but ≥4.5:1 on surfaces 1–4 */
   --text-faint: var(--gray-10);          /* 3:1 — large text / placeholders / captions only */
 
-  /* ── Accent · AMBER (signature phosphor) ────────────────────────────── */
+  /* ── Accent · inventive indigo ──────────────────────────────────────── */
   --amber-1:  #17120a;
   --amber-2:  #1f1808;
   --amber-3:  #2e2207;
@@ -62,12 +51,12 @@
   --amber-10: #ffbe2e;   /* accent hover */
   --amber-11: #ffc94d;   /* amber text/links on dark (AA ~9:1) */
   --amber-12: #ffe4a8;
-  --accent: var(--amber-9);
-  --accent-hover: var(--amber-10);
-  --accent-text: var(--amber-11);
-  --accent-dim: var(--amber-5);
-  --accent-glow: rgba(255, 176, 0, 0.32);
-  --accent-soft: rgba(255, 176, 0, 0.09);   /* faint fill for active regions */
+  --accent: #6ea8fe;
+  --accent-hover: #8bb9ff;
+  --accent-text: #9ec5fe;
+  --accent-dim: #29466e;
+  --accent-glow: rgba(110, 168, 254, 0.22);
+  --accent-soft: rgba(110, 168, 254, 0.10);
 
   /* ── Secondary · IRIDIUM CYAN (instrument / live-signal) ────────────── */
   --cyan-3:  #06232a;
@@ -76,12 +65,12 @@
   --cyan-9:  #22d3ee;   /* SOLID secondary */
   --cyan-10: #3ddcf2;   /* secondary hover */
   --cyan-11: #6fe6f6;   /* cyan text on dark (AA) */
-  --secondary: var(--cyan-9);
-  --secondary-hover: var(--cyan-10);
-  --secondary-text: var(--cyan-11);
-  --secondary-dim: var(--cyan-5);
-  --secondary-glow: rgba(34, 211, 238, 0.30);
-  --secondary-soft: rgba(34, 211, 238, 0.09);
+  --secondary: #35d7c7;
+  --secondary-hover: #5ce2d5;
+  --secondary-text: #8ceee5;
+  --secondary-dim: #176a68;
+  --secondary-glow: rgba(53, 215, 199, 0.30);
+  --secondary-soft: rgba(53, 215, 199, 0.10);
 
   /* ── Semantic (success / warn / error) ──────────────────────────────── */
   --green: #46e08f;
@@ -130,14 +119,14 @@
   --heading: "Space Grotesk", "Inter", system-ui, sans-serif;                  /* section titles */
 
   /* modular scale (~1.22 ratio, 13px base) — legacy names retuned + extended */
-  --fs-xs: 10.5px;   /* captions, micro-labels */
-  --fs-sm: 11.5px;   /* dense UI, chips */
-  --fs-md: 13px;     /* body / base */
-  --fs-lg: 15.5px;   /* emphasized body, small headings */
-  --fs-xl: 19px;     /* headings */
-  --fs-2xl: 24px;    /* large headings */
-  --fs-3xl: 31px;    /* hero / display */
-  --fs-4xl: 40px;    /* marquee display */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 21px;
+  --fs-2xl: 27px;
+  --fs-3xl: 36px;
+  --fs-4xl: 46px;
 
   /* line-heights */
   --lh-tight: 1.15;
@@ -180,11 +169,11 @@
   --sp-10: 72px;
 
   /* ── Radius ─────────────────────────────────────────────────────────── */
-  --r-xs: 4px;
-  --r-sm: 6px;
-  --r: 8px;
-  --r-lg: 12px;
-  --r-xl: 18px;
+  --r-xs: 3px;
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 8px;
+  --r-xl: 12px;
   --r-pill: 999px;
 
   /* ── Elevation / shadow ─────────────────────────────────────────────── */
@@ -231,69 +220,52 @@
    LIGHT shell (the 3D canvas keeps its own scene lighting)
    ═══════════════════════════════════════════════════════════════════════ */
 :root[data-theme="light"] {
-  /* FORGE ramp — sampled from Gandolfi's "Zeus with Hera Expelling Hephaestus"
-     (public domain), which is apt twice over: the assistant is named after the
-     god of the forge, and that is him in the painting. Every colour in it is
-     warm — red-minus-blue runs +26 to +108 across the whole canvas — so it is
-     a principled source for a warm palette rather than a decorative one.
-
-     Twice-corrected for brightness. The first cream was 0.924 luminance; the
-     second attempt was 0.812 and still too bright — brighter, in fact, than
-     ANY colour in the painting, whose lightest tone is 0.44. This background
-     is 0.448, sitting exactly at that lightest tone, so the UI finally lives
-     inside the source's own range instead of above it. A mid-tone background
-     squeezes contrast from both ends, so the accents were darkened until they
-     cleared AA against it rather than against a near-white. Chroma is kept low through the mid steps so borders
-     read as warm grey rather than mud; the saturation lives in the accent,
-     which is the painting's own sienna. Hue holds to --gray-12, so text is a
-     warm near-black, not the blue-black that made the first light theme feel
-     clinical. Every text step was checked against WCAG AA on both the
-     background and the panel. */
-  --gray-1: #c9ae92;  --gray-2: #d2bda7;  --gray-3: #c1a485;  --gray-4: #b99874;
-  --gray-5: #af8b64;  --gray-6: #a47e56;  --gray-7: #8b6c4b;  --gray-8: #775d40;
-  --gray-9: #644d35;  --gray-10: #513e2a; --gray-11: #3e2e1e; --gray-12: #231a10;
+  /* Neutral, low-glare desktop surfaces with AA text contrast. */
+  --gray-1: #e9eaec;  --gray-2: #f7f7f5;  --gray-3: #ffffff;  --gray-4: #f0f1f2;
+  --gray-5: #e5e7e9;  --gray-6: #d4d7da;  --gray-7: #bfc4c9;  --gray-8: #9fa6ae;
+  --gray-9: #7f8791;  --gray-10: #68717c; --gray-11: #4e5660; --gray-12: #1b1e22;
 
   --bg: var(--gray-1);
   --panel: var(--gray-2);
   --panel-2: var(--gray-3);
   --panel-3: var(--gray-4);
   --panel-4: var(--gray-5);
-  --overlay: rgba(201, 174, 146, 0.88);
-  --overlay-strong: rgba(210, 189, 167, 0.97);
+  --overlay: rgba(20, 33, 61, 0.72);
+  --overlay-strong: rgba(255, 255, 255, 0.97);
   --border: var(--gray-6);
   --border-2: var(--gray-7);
   --border-focus: var(--gray-8);
   --text: var(--gray-12);
   --text-dim: var(--gray-11);
-  --text-faint: #5d4a35;
+  --text-faint: #667594;
 
   /* amber: bright hue kept for solid fills / 3D, burnt amber for text/icons (AA on white) */
-  --accent: #5c3216;                        /* deep sienna — 5.2:1 on the dimmer ground */
-  --accent-hover: #74401d;
-  --accent-text: #4a2811;                   /* 6.3:1 */
-  --amber-9: #8f4718;                       /* forge ember — fills and 3D, not body text */
-  --accent-dim: #b99874;
-  --accent-glow: rgba(92, 50, 22, 0.24);
-  --accent-soft: rgba(92, 50, 22, 0.12);
+  --accent: #245ea9;
+  --accent-hover: #1d4f91;
+  --accent-text: #1e559d;
+  --amber-9: #ffc857;
+  --accent-dim: #b8cbe4;
+  --accent-glow: rgba(36, 94, 169, 0.20);
+  --accent-soft: rgba(36, 94, 169, 0.08);
 
   /* secondary cyan: deepened so it stays legible on light surfaces */
-  --secondary: #17423d;                     /* verdigris — the patina on forged copper */
-  --secondary-hover: #1f544e;
-  --secondary-text: #123430;
-  --secondary-dim: #9fb5ac;
-  --secondary-glow: rgba(12, 124, 143, 0.20);
-  --secondary-soft: rgba(12, 124, 143, 0.09);
+  --secondary: #087e7b;
+  --secondary-hover: #066b69;
+  --secondary-text: #08706d;
+  --secondary-dim: #b7ece7;
+  --secondary-glow: rgba(8, 126, 123, 0.20);
+  --secondary-soft: rgba(8, 126, 123, 0.09);
 
-  --edge-hi: inset 0 1px 0 rgba(255, 250, 240, 0.30);
-  --edge-lo: inset 0 -1px 0 rgba(35, 26, 16, 0.16);
-  --glass-bg: linear-gradient(180deg, rgba(210,189,167,0.72), rgba(201,174,146,0.42));
-  --glass-border: rgba(35, 26, 16, 0.18);
+  --edge-hi: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --edge-lo: inset 0 -1px 0 rgba(20, 33, 61, 0.08);
+  --glass-bg: linear-gradient(180deg, rgba(255,255,255,0.90), rgba(246,248,255,0.76));
+  --glass-border: rgba(91, 85, 231, 0.14);
   --glass-blur: saturate(120%) blur(12px);
 
-  --btn-accent-grad: linear-gradient(180deg, #fff3dd, #ffe9c4);
-  --btn-accent-grad-hover: linear-gradient(180deg, #ffe9c4, #ffdfa8);
-  --btn-go-grad: linear-gradient(180deg, #e7f7ee, #d6f0e0);
-  --btn-go-grad-hover: linear-gradient(180deg, #d6f0e0, #c2e8d0);
+  --btn-accent-grad: #245ea9;
+  --btn-accent-grad-hover: #1d4f91;
+  --btn-go-grad: #26734d;
+  --btn-go-grad-hover: #1f6442;
 
   /* semantic: darker for AA on light */
   --green: #14803c;
@@ -312,10 +284,10 @@
   --warn-text: #855a00;
   --bad-text: #b41b26;
 
-  --shadow-1: 0 1px 2px rgba(30, 40, 60, 0.08);
-  --shadow-2: 0 4px 14px rgba(30, 40, 60, 0.10);
-  --shadow: 0 8px 30px rgba(30, 40, 60, 0.15);
-  --shadow-lg: 0 24px 70px rgba(30, 40, 60, 0.2);
+  --shadow-1: 0 2px 5px rgba(42, 55, 98, 0.07);
+  --shadow-2: 0 8px 22px rgba(42, 55, 98, 0.10);
+  --shadow: 0 14px 34px rgba(42, 55, 98, 0.14);
+  --shadow-lg: 0 30px 80px rgba(42, 55, 98, 0.22);
   --shadow-glow: 0 0 20px var(--accent-glow);
   --shadow-glow-cy: 0 0 20px var(--secondary-glow);
   --focus-ring: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent-glow);
