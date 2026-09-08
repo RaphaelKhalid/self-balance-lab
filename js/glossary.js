@@ -10,6 +10,11 @@ export const COMPONENTS = {
     blurb: 'Turns current into rotation. It also pushes back as it spins up (back-EMF), so the faster it turns the less current it draws — which is why a stalled motor draws the most.',
     unit: 'Motors',
   },
+  motor_fan: {
+    title: 'Desk Fan',
+    blurb: 'A motor that spins fan blades. Complete the circuit to power it, add a power knob to change its speed, or swap its two wires to reverse the rotation.',
+    unit: 'Motors',
+  },
   resistor: {
     title: 'Resistor',
     blurb: 'Limits how much current can flow. The single most common use: putting one in series with an LED so the LED gets the few milliamps it wants instead of the amp the battery would happily supply.',
@@ -92,6 +97,8 @@ export const PINS = {
   // ── the parts every first circuit uses ──
   'motor.A': { title: 'Motor terminal A', role: 'One side of the motor coil. Current in here, out of B, spins it one way; swap them and it spins the other way.', kind: 'power' },
   'motor.B': { title: 'Motor terminal B', role: 'The other side of the coil — the return path back to the battery.', kind: 'power' },
+  'motor_fan.A': { title: 'Fan terminal A', role: 'Current entering A and leaving B turns the blades one way. Swap the connections to reverse them.', kind: 'power' },
+  'motor_fan.B': { title: 'Fan terminal B', role: 'The other side of the fan motor, completing the path back to the battery.', kind: 'power' },
   'resistor.A': { title: 'Resistor leg A', role: 'Resistors have no polarity: either leg can face the supply.', kind: 'power' },
   'resistor.B': { title: 'Resistor leg B', role: 'The other leg. Same as A — orientation does not matter.', kind: 'power' },
   'switch.A': { title: 'Switch terminal A', role: 'One side of the contact. Closed, A and B are joined; open, the loop is broken.', kind: 'power' },

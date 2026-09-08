@@ -1,41 +1,93 @@
-// Hephaestus — the client agent loop (Milestone 2), on the Gemini API.
-//
-// Owns the conversation (Gemini `contents`) and the tool-execution loop; the
-// model's decisions land on the build ONLY through window.__api (via runTool).
-// Flow per user message:
-//   1. POST { contents, document } → /api/hephaestus  (one model turn)
-//   2. if the reply has functionCall parts: run each against the api, append the
-//      results as a user turn of functionResponse parts, and go back to 1
-//   3. otherwise show the model's text and stop
-//
-// A free-tier QUOTA gate caps how many messages a signed-out / free user can
-// send per day, so the shared Gemini free key can't be burned through. Pro users
-// (profiles.tier) are uncapped. The gate is client-side (localStorage) — good
-// enough to protect the free key; server-side enforcement lands with real auth.
+// Hephaestus executes model tool calls only through the shared document API.
+// Templates stay separate from AI: an unavailable model is reported honestly.
 import { runTool } from '../api/tools.js';
+import { LIBRARY, baseType } from '../model/library.js';
 import { track, EVENTS } from './analytics.js';
 
 const ENDPOINT = '/api/hephaestus';
-const MAX_STEPS = 8;          // model turns per user message (tool loops)
-const FREE_DAILY = 25;        // free/anon messages per day per browser
+const MAX_STEPS = 8;
+const FREE_DAILY = 25;
 const USAGE_KEY = 'sbl-hephaestus-usage';
 
-// A few one-tap starter prompts that show, by example, that Hephaestus can build the
-// whole thing for you — the fastest path past a blank bench.
 const EXAMPLE_PROMPTS = [
-  'Build a blinking LED',
-  'Wire a motor to a battery',
-  'Add a switch to turn the motor on and off',
-  'Wire it up and run it',
+  'Build a desk fan with an on/off switch',
+  'Make a little night light',
+  'Add a speed control to my motor',
 ];
+
+const SIMPLE_LABELS = {
+  battery: 'battery', motor: 'motor', motor_fan: 'fan', led: 'LED',
+  potentiometer: 'speed dial', photoresistor: 'light sensor', thermistor: 'temperature sensor',
+};
+const partLabel = type => SIMPLE_LABELS[type] || LIBRARY[type]?.label?.toLowerCase() || 'part';
+
+// Receipts describe confirmed results, not model intentions. They never expose
+// component IDs or raw tool arguments in the child's conversation.
+export function describeToolResult(name, args = {}, result, doc = { components: [] }) {
+  const components = doc.components || [];
+  const component = id => components.find(c => c.id === id);
+  const label = id => partLabel(component(id)?.type);
+  const endpointLabel = endpoint => label(String(endpoint || '').split('.')[0]);
+  if (name === 'read_electrical' && result?.current) {
+    if (result.ok === false || result.violations?.length) return 'The circuit needs a fix.';
+    const powered = Object.entries(result.current).some(([id, current]) =>
+      baseType(component(id)?.type) !== 'battery' && Math.abs(current) > 0.000001);
+    return powered ? 'Checked: power is flowing through your invention.' : 'Checked: no power is flowing yet.';
+  }
+  if (name === 'validate' && Array.isArray(result)) {
+    return result.length ? 'Found a circuit issue to work on.' : 'Checked the connections: no problems detected.';
+  }
+  if (!result?.ok) {
+    const failures = {
+      place_component: 'That part could not be added.',
+      move_component: 'That part could not be moved.',
+      connect: 'That wire could not be connected.',
+      disconnect: 'That wire could not be removed.',
+      remove_component: 'That part could not be removed.',
+      set_param: 'That setting could not be changed.',
+      set_switch: 'That switch could not be changed.',
+      set_name: 'The invention could not be renamed.',
+      run_sim: 'The motor test could not start.',
+    };
+    return failures[name] || 'That step could not be completed.';
+  }
+  switch (name) {
+    case 'place_component': return `Added the ${partLabel(args.type)}.`;
+    case 'move_component': return `Arranged the ${label(args.id)} on the bench.`;
+    case 'remove_component': return `Removed the ${label(args.id)}.`;
+    case 'connect': return result.changed === false
+      ? 'Those parts are already connected.'
+      : `Connected the ${endpointLabel(args.from)} to the ${endpointLabel(args.to)}.`;
+    case 'disconnect': return 'Removed a wire.';
+    case 'set_name': return `Named your invention “${String(args.name).trim().slice(0, 80)}”.`;
+    case 'set_switch': return `${args.closed ? 'Closed' : 'Opened'} the ${label(args.id)}.`;
+    case 'set_param': {
+      const setting = { voltsNominal: 'voltage', resistance: 'resistance', maxResistance: 'dial range', forwardVoltage: 'turn-on voltage', maxCurrent: 'current limit' }[args.key] || 'setting';
+      return `Adjusted the ${label(args.id)}’s ${setting}.`;
+    }
+    case 'run_sim': return result.running === false ? 'The motor test is not running yet.' : 'Started the motor test.';
+    case 'stop_sim': return 'Returned to the invention bench.';
+    default: return 'Finished that step.';
+  }
+}
+
+function builderError(message) {
+  const error = new Error(message);
+  error.soft = true;
+  return error;
+}
 
 export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
   const form = document.getElementById('hephaestus-form');
   const input = document.getElementById('hephaestus-input');
   const log = document.getElementById('hephaestus-log');
   if (!form || !input || !log) return { send: async () => {} };
+  const submit = form.querySelector('[type="submit"]');
+  log.setAttribute('role', 'log');
+  log.setAttribute('aria-live', 'polite');
+  log.setAttribute('aria-label', 'Conversation with Hephaestus');
 
-  const contents = [];   // Gemini message history (user/model turns)
+  const contents = [];
   let busy = false;
 
   function bubble(who, text) {
@@ -46,17 +98,15 @@ export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
     log.scrollTop = log.scrollHeight;
     return el;
   }
-  function toolNote(name, args) {
+  function toolNote(name, args, result, doc) {
     const el = document.createElement('div');
-    el.className = 'hp-tool';
-    const a = Object.entries(args || {}).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ');
-    el.textContent = `⚙ ${name}(${a})`;
+    const failed = Array.isArray(result) ? result.length > 0 : !result?.ok;
+    el.className = `hp-tool${failed ? ' hp-tool-error' : ''}`;
+    el.textContent = `${failed ? '↳' : '✓'} ${describeToolResult(name, args, result, doc)}`;
     log.appendChild(el);
     log.scrollTop = log.scrollHeight;
   }
 
-  // Animated "thinking…" placeholder shown while a model turn is in flight.
-  // Returned handle is removed as soon as the turn resolves.
   function showThinking() {
     const el = document.createElement('div');
     el.className = 'hp-thinking';
@@ -67,17 +117,15 @@ export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
     return { remove() { el.remove(); } };
   }
 
-  // Example-prompt chips: one tap fills the input and sends. Rendered once,
-  // hidden after the first user message so they don't clutter the transcript.
   function renderChips() {
     const wrap = document.createElement('div');
     wrap.className = 'hp-chips';
-    for (const p of EXAMPLE_PROMPTS) {
+    for (const prompt of EXAMPLE_PROMPTS) {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'hp-chip';
-      chip.textContent = p;
-      chip.addEventListener('click', () => { send(p); });
+      chip.textContent = prompt;
+      chip.addEventListener('click', () => { send(prompt); });
       wrap.appendChild(chip);
     }
     log.appendChild(wrap);
@@ -85,62 +133,84 @@ export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
   }
   const chips = renderChips();
 
-  // ── free-tier quota ───────────────────────────────────────────
   function today() { return new Date().toISOString().slice(0, 10); }
   function usage() {
     try {
-      const u = JSON.parse(localStorage.getItem(USAGE_KEY) || 'null');
-      if (u && u.date === today()) return u;
+      const value = JSON.parse(localStorage.getItem(USAGE_KEY) || 'null');
+      if (value && value.date === today()) return value;
     } catch {}
     return { date: today(), count: 0 };
   }
   function bumpUsage() {
-    const u = usage(); u.count += 1;
-    try { localStorage.setItem(USAGE_KEY, JSON.stringify(u)); } catch {}
+    const value = usage(); value.count += 1;
+    try { localStorage.setItem(USAGE_KEY, JSON.stringify(value)); } catch {}
   }
   function overQuota() {
     const tier = (getTier && getTier()) || 'free';
-    if (tier !== 'free') return false;      // pro/paid: uncapped
-    return usage().count >= FREE_DAILY;
+    return tier === 'free' && usage().count >= FREE_DAILY;
   }
 
   async function turn() {
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ contents, document: api.get_document() }),
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      // 503 = the Edge proxy has no GEMINI_API_KEY configured (e.g. local dev
-      // or a fork). Hephaestus is optional — the whole app works without it — so say
-      // so plainly rather than looking broken.
-      if (res.status === 503) {
-        const err = new Error('Hephaestus is offline here — no API key is set. You can still build by hand: drag parts in and click pin-to-pin to wire.');
-        err.soft = true;
-        throw err;
-      }
-      if (res.status === 429) throw new Error('Hephaestus is busy right now — give it a few seconds and try again.');
-      throw new Error(e.error || `Hephaestus request failed (${res.status})`);
+    const controller = new window.AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+    let res;
+    try {
+      res = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ contents, document: api.get_document() }),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      throw builderError(error.name === 'AbortError'
+        ? 'The AI builder took too long to reply. Your invention is still here. Try again, or open the Idea shelf for a ready-to-remix build.'
+        : 'I couldn’t reach the AI builder. Your invention is still here. Open the Idea shelf for a ready-to-remix build, or try again.');
+    } finally {
+      clearTimeout(timeout);
     }
-    return res.json();   // { content:{role,parts}, finishReason }
+    if (!res.ok) {
+      if ([404, 405, 503].includes(res.status)) {
+        throw builderError('The AI builder isn’t connected in this version. Open the Idea shelf for a ready-to-remix invention, or build with parts from the tray.');
+      }
+      if (res.status === 429) throw builderError('The AI builder is busy right now. Try again in a moment, or pick an invention from the Idea shelf.');
+      throw builderError('The AI builder couldn’t finish that request. Your bench is still yours to explore. Try again, or open the Idea shelf.');
+    }
+    const reply = await res.json().catch(() => null);
+    if (!Array.isArray(reply?.content?.parts) || !reply.content.parts.length) {
+      throw builderError('The AI builder sent an incomplete reply. Please try again; your invention is still on the bench.');
+    }
+    return reply;
+  }
+
+  // Keep entire tool exchanges together when making room for a new request.
+  // Eight model steps add at most sixteen turns; leaving twenty here stays
+  // below the backend's forty-turn cap without splitting tool call/result pairs.
+  function trimHistory() {
+    while (contents.length > 20) {
+      const nextRequest = contents.findIndex((entry, index) => index > 0 &&
+        entry.role === 'user' && entry.parts.some(part => typeof part.text === 'string'));
+      if (nextRequest < 0) { contents.length = 0; break; }
+      contents.splice(0, nextRequest);
+    }
   }
 
   async function send(text) {
     if (busy || !text.trim()) return;
     if (overQuota()) {
-      bubble('err', `Daily free limit reached — you've used your ${FREE_DAILY} free Hephaestus messages for today. Sign in or upgrade for more, or keep building by hand, it's all yours.`);
+      bubble('err', `Daily free limit reached — you’ve used your ${FREE_DAILY} AI messages for today. Your bench and the Idea shelf are still yours to explore. Come back tomorrow for more AI builds.`);
       onUpgrade?.();
       return;
     }
     busy = true;
     input.disabled = true;
-    chips?.remove();   // starter chips have served their purpose
+    if (submit) submit.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    chips.remove();
     bubble('user', text);
+    trimHistory();
+    const historyStart = contents.length;
     contents.push({ role: 'user', parts: [{ text }] });
-    bumpUsage();   // one user message = one unit, regardless of tool round-trips
-    // funnel: how many users actually reach for the assistant, and does using it
-    // change their odds of a working circuit? (the split that justifies the bet)
+    let receivedReply = false;
     track(EVENTS.HEPHAESTUS_MSG, { turn: contents.length });
 
     try {
@@ -148,43 +218,45 @@ export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
         const thinking = showThinking();
         let reply;
         try { reply = await turn(); } finally { thinking.remove(); }
-        const parts = (reply.content && reply.content.parts) || [];
-        contents.push(reply.content || { role: 'model', parts: [] });
-
-        for (const p of parts) {
-          if (p.text && p.text.trim()) bubble('bot', p.text.trim());
+        if (!receivedReply) { bumpUsage(); receivedReply = true; }
+        const parts = reply.content.parts;
+        contents.push(reply.content);
+        for (const part of parts) {
+          if (part.text?.trim()) bubble('bot', part.text.trim());
         }
-
-        const calls = parts.filter(p => p.functionCall);
-        if (calls.length === 0) break;   // model is done
-
+        const calls = parts.filter(part => part.functionCall);
+        if (calls.length === 0) {
+          if (!parts.some(part => part.text?.trim())) bubble('err', 'The AI builder had no reply that time. Try asking again.');
+          break;
+        }
         const responseParts = [];
-        for (const p of calls) {
-          const { name, args } = p.functionCall;
-          toolNote(name, args);
-          // some tools (run_sim) are async — await unconditionally so a promise
-          // is never stringified into the model's function response as `{}`.
+        for (const part of calls) {
+          const { name, args } = part.functionCall;
+          const before = api.get_document();
           const result = await runTool(api, name, args || {});
-          track(EVENTS.HEPHAESTUS_TOOL, { tool: name, ok: !!result?.ok });
+          toolNote(name, args || {}, result, before);
+          track(EVENTS.HEPHAESTUS_TOOL, { tool: name, ok: Array.isArray(result) ? result.length === 0 : !!result?.ok });
           responseParts.push({ functionResponse: { name, response: wrap(result) } });
         }
         contents.push({ role: 'user', parts: responseParts });
+        if (step === MAX_STEPS - 1) bubble('bot', 'I’ve paused after several steps. The changes are on your bench. Ask me to continue when you’re ready.');
       }
-    } catch (e) {
-      const msg = e.message || 'Hephaestus failed';
-      bubble('err', msg);
-      // Soft failures (Hephaestus just isn't available) shouldn't fire an alarming
-      // red status flash — the app is fine, only the assistant is off.
-      if (!e.soft) onFlash?.(msg, 'bad');
+    } catch (error) {
+      if (!receivedReply) contents.splice(historyStart);
+      const message = error.soft ? error.message : 'I couldn’t finish that build. You can keep exploring the bench, or ask me to try again.';
+      bubble('err', message);
+      if (!error.soft) onFlash?.(message, 'bad');
     } finally {
       busy = false;
       input.disabled = false;
+      if (submit) submit.disabled = false;
+      form.setAttribute('aria-busy', 'false');
       input.focus();
     }
   }
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+  form.addEventListener('submit', event => {
+    event.preventDefault();
     const text = input.value;
     input.value = '';
     send(text);
@@ -193,8 +265,7 @@ export function initHephaestus({ api, onFlash, getTier, onUpgrade } = {}) {
   return { send };
 }
 
-// Gemini requires functionResponse.response to be a JSON object (not an array or
-// scalar) — wrap anything else so the loop never sends a malformed part.
+// Gemini requires functionResponse.response to be an object.
 function wrap(result) {
   return (result && typeof result === 'object' && !Array.isArray(result)) ? result : { result };
 }

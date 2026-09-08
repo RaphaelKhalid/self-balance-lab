@@ -103,6 +103,8 @@ test('editing a resistor param in the Inspector re-solves the current', async ({
     api.connect({ from: 'r1.B', to: 'motor1.A' });
     api.connect({ from: 'bat1.-', to: 'motor1.B' });
   });
+  // Open the optional circuit details as a visitor would before editing.
+  await page.locator('#circuit-details-toggle').click();
   // find the Inspector's resistance field for r1 and change it
   const field = page.locator('#inspector input[data-comp="r1"][data-key="resistance"]');
   await expect(field).toHaveValue('100');

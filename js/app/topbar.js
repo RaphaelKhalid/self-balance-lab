@@ -17,7 +17,7 @@ export function initTopbar({ getName, onRename } = {}) {
   bar.innerHTML = `
     <div class="tb-brand">
       <span class="tb-mark" aria-hidden="true"><i data-lucide="sparkles"></i></span>
-      <span class="tb-lockup"><span class="tb-name">SelfBalance</span><span class="tb-sub">Inventor Studio</span></span>
+      <span class="tb-lockup"><span class="tb-name">SelfBalance</span><span class="tb-sub">Invention studio</span></span>
     </div>
     <button class="tb-robot" id="tb-robot" title="Rename this build"><span class="tb-dot"></span><span id="tb-robot-name">Bench</span></button>
     <div class="tb-actions">

@@ -9,6 +9,18 @@ import { state } from './state.js';
 // (endpoint pairs "id.pin"). Positions are auto-assigned on a grid at load time.
 export const EXAMPLES = [
   {
+    id: 'pocket-breeze', tier: 'Start here', title: 'Pocket breeze',
+    blurb: 'Your own desk fan. Switch it on, turn up the power, and make a little wind.',
+    note: 'Try the power slider. What happens when you turn it down?',
+    parts: [
+      { type: 'battery', id: 'bat1', pos: [-10, 2, 3] },
+      { type: 'switch', id: 'sw1', params: { closed: true }, pos: [-9, 2, -4] },
+      { type: 'potentiometer', id: 'pot1', params: { resistance: 12, maxResistance: 120 }, pos: [0, 2, 5] },
+      { type: 'motor_fan', id: 'fan1', pos: [7, 2, -2] },
+    ],
+    wires: [['bat1.+', 'sw1.A'], ['sw1.B', 'pot1.A'], ['pot1.B', 'fan1.A'], ['fan1.B', 'bat1.-']],
+  },
+  {
     id: 'led-torch', tier: 'Starter', title: 'LED torch',
     blurb: 'Battery → resistor → LED. The resistor keeps the LED from burning out.',
     parts: [
@@ -33,7 +45,7 @@ export const EXAMPLES = [
     blurb: 'Hold the push button to complete the loop and sound the buzzer.',
     parts: [
       { type: 'battery', id: 'bat1' },
-      { type: 'push_button', id: 'btn1', params: { closed: true } },
+      { type: 'push_button', id: 'btn1', params: { closed: false } },
       { type: 'buzzer', id: 'buz1' },
     ],
     wires: [['bat1.+', 'btn1.A'], ['btn1.B', 'buz1.+'], ['buz1.-', 'bat1.-']],
@@ -65,7 +77,7 @@ export const EXAMPLES = [
   },
   {
     id: 'diode-oneway', tier: 'Intermediate', title: 'Diode: the one-way valve',
-    blurb: 'A diode passes current only A→K. Wired forward the lamp lights; flip the diode (R) and it goes dark.',
+    blurb: 'A diode passes current only A→K. Wired forward the lamp lights; swap its wire connections and it goes dark.',
     parts: [
       { type: 'battery', id: 'bat1' },
       { type: 'diode', id: 'dio1' },
@@ -107,7 +119,7 @@ export const EXAMPLES = [
   {
     id: 'light-ldr', tier: 'Physical inputs', title: '💡 Light-sensing LED',
     blurb: 'A photoresistor + LED. In the dark its resistance is high and the LED is off — shine the lamp on it to switch the LED on.',
-    note: 'Drag the lamp (it appears on the bench) over the photoresistor to light it.',
+    note: 'Click the desk lamp in the room to turn the sensor circuit on and off.',
     parts: [
       { type: 'battery', id: 'bat1' },
       { type: 'photoresistor', id: 'ldr1', params: { resistance: 3000, maxResistance: 3000 } },
@@ -166,15 +178,16 @@ export function initExamples({ api, hud, onLoad, exitSim } = {}) {
     // place on a loose grid so parts don't stack (bench physics settles them)
     const cols = 4;
     preset.parts.forEach((p, i) => {
-      const gx = ((i % cols) - (cols - 1) / 2) * 10;
+      const gx = ((i % cols) - (Math.min(preset.parts.length, cols) - 1) / 2) * 9;
       const gz = (Math.floor(i / cols) - 0.5) * 10;
       const r = api.place_component({
         type: p.type, id: p.id, params: p.params,
-        transform: { pos: [gx, 2, gz], rot: [0, 0, 0] },
+        transform: { pos: p.pos || [gx, 2, gz], rot: [0, 0, 0] },
       });
       if (!r.ok) hud?.flash?.(`Couldn't place ${p.type}: ${r.errors?.[0] || ''}`, 'bad');
     });
     for (const [from, to] of preset.wires) api.connect({ from, to });
+    api.set_name({ name: preset.title });
     if (!silent) hud?.flash?.(`Loaded: ${preset.title}`, 'ok');
     if (preset.note) hud?.setStatus?.(preset.note);
     onLoad?.(preset);

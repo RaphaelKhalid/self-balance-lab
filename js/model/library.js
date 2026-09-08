@@ -174,6 +174,10 @@ export const LIBRARY = {
   },
 };
 
+// A fan uses the same DC motor physics and pin contract, with its own housing.
+LIBRARY.motor_fan = { ...LIBRARY.motor, label: 'Desk Fan',
+  description: 'A motor-powered desk fan. Wire A and B and control its speed with a power knob.' };
+
 // Base type for instanced parts (motorL/motorR → motor).
 export function baseType(type) {
   if (!type) return type;

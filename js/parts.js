@@ -1,137 +1,132 @@
-// Part factories — each returns a THREE.Group with userData:
-//   { type, label, pins: [{ name, obj }] }
-// Units: 1 unit = 1 cm.
-//
-// What's left here are the two detailed meshes the creator bench reuses (see
-// FACTORY in js/app/creator-assembly.js, which builds the rest procedurally).
-// The Arduino / IMU / L298N factories, the PART_DEFS tray registry and the
-// fixed chassis SLOTS belonged to the pre-pivot self-balancer and are gone with
-// it — the creator bench has no fixed mount points and no microcontroller.
+// Invention-kit power and motion modules. Units are centimetres; all pins and
+// moving rotor references retain the creator bench's public geometry contract.
 import * as THREE from 'three';
-import { makeFlatLabel } from './labels.js';
-import { partMat } from './app/part-materials.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { KIT, kitMaterial, kitBox, kitFasteners, kitTerminal, kitLabel } from './app/invention-models.js';
 
-const PIN_RADIUS = 0.09;
-const PIN_HEIGHT = 0.28;
-
-const mat = (color, opts = {}) =>
-  partMat({ color, roughness: 0.65, metalness: 0.1, ...opts });
-
-const goldMat = partMat({ color: 0xd4af37, roughness: 0.35, metalness: 0.8 });
-const blackMat = mat(0x1a1a1a);
-const silverMat = partMat({ color: 0xb0b4bc, roughness: 0.45, metalness: 0.7 });
-
-function addPin(group, name, x, y, z, labelSide = 1) {
-  const pin = new THREE.Mesh(
-    new THREE.CylinderGeometry(PIN_RADIUS, PIN_RADIUS, PIN_HEIGHT, 8),
-    goldMat
-  );
-  pin.position.set(x, y + PIN_HEIGHT / 2, z);
-  pin.userData.pinName = name;
-  group.add(pin);
-
-  const label = makeFlatLabel(name, 0.32, { color: '#e8eef5' });
-  label.position.set(x, y + 0.02, z + 0.34 * labelSide);
-  group.add(label);
-  pin.userData.labelMesh = label;
-  pin.userData.labelPos = { x, y, z, side: labelSide };
-
-  group.userData.pins.push({ name, obj: pin });
-  return pin;
+function cylinder(group, radius, length, position, material, segments = 32) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, segments), material);
+  mesh.position.set(...position);
+  mesh.castShadow = true;
+  group.add(mesh);
+  return mesh;
 }
 
-// ── DC geared motor + wheel ───────────────────────────────────
-// side: -1 = left motor (wheel on -x), +1 = right motor (wheel on +x)
+// The wheel's local Y stays its axle, so the assembly's electrical-current
+// animation can rotate the whole rotor with one reference, including the hub.
 export function makeMotor(side = 1) {
-  const g = new THREE.Group();
-  g.userData = { type: side < 0 ? 'motorL' : 'motorR', label: 'DC Gear Motor', pins: [] };
+  const group = new THREE.Group();
+  group.userData = { type: side < 0 ? 'motorL' : 'motorR', label: 'DC Gear Motor', pins: [] };
+  const ivory = kitMaterial(KIT.ivory);
+  const teal = kitMaterial(KIT.teal);
+  const steel = kitMaterial(KIT.steel, { metalness: 0.8 });
+  const ink = kitMaterial(KIT.ink);
+  const rubber = kitMaterial(KIT.rubber, { roughness: 0.83, finish: 'rough' });
 
-  const bodyMat = mat(0xf0c020);
+  kitBox(group, [3.15, 0.3, 4.8], [-0.2 * side, 0.18, 0.9], rubber, 0.18);
+  kitBox(group, [2.6, 1.32, 3.45], [0, 0.98, 0.45], ivory, 0.22);
+  kitBox(group, [2.55, 2.0, 3.45], [0, 2.62, 0.45], teal, 0.24);
+  // A fine contrasting seam and end cover define a two-piece molded gearbox.
+  kitBox(group, [2.61, 0.065, 3.48], [0, 2.32, 0.45], ink, 0.1);
+  kitBox(group, [2.39, 0.16, 3.23], [0, 3.63, 0.45], ivory, 0.14);
+  kitFasteners(group, [[-0.94, 3.72, -0.85], [0.94, 3.72, -0.85],
+    [-0.94, 3.72, 1.72], [0.94, 3.72, 1.72]], 0.11);
 
-  // gearbox block
-  const gearbox = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.9, 3.6), bodyMat);
-  gearbox.position.y = 1.0;
-  g.add(gearbox);
-
-  // motor can (cylinder, axis along z, sticking out the back)
-  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2.6, 20), silverMat);
+  const can = cylinder(group, 0.98, 2.35, [0, 2.72, 3.18], steel, 40);
   can.rotation.x = Math.PI / 2;
-  can.position.set(0, 1.0, 3.0);
-  g.add(can);
-
-  // shaft along x, pointing outward to `side`
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.6, 10), silverMat);
-  shaft.rotation.z = Math.PI / 2;
-  shaft.position.set(side * 1.7, 1.0, -0.6);
-  g.add(shaft);
-
-  // wheel: tire + hub
-  // rubber is genuinely matte — opt out of the gloss clamp, keep the env map
-  const tire = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.3, 1.3, 28),
-    mat(0x22252c, { roughness: 0.9, finish: 'rough' }));
-  tire.rotation.z = Math.PI / 2;
-  tire.position.set(side * 3.1, 1.0, -0.6);
-  g.add(tire);
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 1.35, 20), mat(0xe8b400));
-  hub.rotation.z = Math.PI / 2;
-  hub.position.set(side * 3.1, 1.0, -0.6);
-  g.add(hub);
-  // bright cross-spokes on the tyre faces so the wheel's rotation is *visible*
-  // when it spins (a smooth cylinder looks static). Children of the tyre, so
-  // they inherit its spin. Tyre local Y = axle; faces sit at local y = ±0.65.
-  const spokeMat = mat(0xff7a3c);
-  spokeMat.emissive = new THREE.Color(0xff3a10);
-  spokeMat.emissiveIntensity = 0.5;
-  for (const fy of [0.68, -0.68]) {
-    for (let s = 0; s < 2; s++) {
-      const spoke = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.28, 0.7), spokeMat);
-      spoke.position.y = fy;
-      spoke.rotation.y = s * Math.PI / 2;
-      tire.add(spoke);
-    }
+  const rear = cylinder(group, 0.97, 0.27, [0, 2.72, 4.4], ink, 32);
+  rear.rotation.x = Math.PI / 2;
+  const collar = cylinder(group, 1.03, 0.2, [0, 2.72, 2.13], ink, 32);
+  collar.rotation.x = Math.PI / 2;
+  const vents = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = i * Math.PI / 5;
+    const slot = new THREE.BoxGeometry(0.13, 0.025, 0.48);
+    slot.translate(0, 0.98, 0);
+    slot.rotateZ(angle);
+    slot.translate(0, 2.72, 3.71);
+    vents.push(slot);
   }
-  g.userData.wheelMeshes = [tire, hub];
+  group.add(new THREE.Mesh(mergeGeometries(vents), ink));
+  vents.forEach(g => g.dispose());
+  const shaft = cylinder(group, 0.19, 1.43, [side * 1.78, 3.0, -0.46], steel, 16);
+  shaft.rotation.z = Math.PI / 2;
 
-  // solder-tab terminals on the motor can
-  const topY = 2.0;
-  addPin(g, 'M+', -0.4, topY, 3.0, side);
-  addPin(g, 'M-',  0.4, topY, 3.0, side);
+  const rotor = new THREE.Group();
+  rotor.position.set(side * 2.67, 3.0, -0.46);
+  rotor.rotation.z = Math.PI / 2;
+  group.add(rotor);
+  // Rounded sidewalls catch a broad rim highlight; a shallow tread reads as
+  // grippy rubber without dozens of separate meshes or a downloaded texture.
+  const profile = [[1.79, -0.68], [2.49, -0.68], [2.8, -0.56], [2.98, -0.32],
+    [3.0, 0.32], [2.8, 0.56], [2.49, 0.68], [1.79, 0.68], [1.79, -0.68]];
+  const tire = new THREE.Mesh(new THREE.LatheGeometry(profile.map(p => new THREE.Vector2(...p)), 48), rubber);
+  tire.castShadow = true;
+  rotor.add(tire);
+  const tread = [];
+  for (let i = 0; i < 36; i++) {
+    const block = new THREE.BoxGeometry(0.16, 0.85, 0.06);
+    block.rotateZ(i % 2 ? 0.17 : -0.17);
+    block.translate(0, 0, 2.99);
+    block.rotateY(i * Math.PI / 18);
+    tread.push(block);
+  }
+  rotor.add(new THREE.Mesh(mergeGeometries(tread), rubber));
+  tread.forEach(g => g.dispose());
+  cylinder(rotor, 1.81, 1.26, [0, 0, 0], ink, 40);
+  cylinder(rotor, 0.62, 1.48, [0, 0, 0], kitMaterial(KIT.coral), 32);
+  const spokes = [];
+  for (const face of [-0.68, 0.68]) {
+    for (let i = 0; i < 5; i++) {
+      const geometry = new THREE.BoxGeometry(0.32, 0.12, 1.27);
+      geometry.translate(0, face, 1.02);
+      geometry.rotateY(i * Math.PI * 2 / 5);
+      spokes.push(geometry);
+    }
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.67, 0.1, 8, 40), ivory);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = face;
+    rotor.add(rim);
+    cylinder(rotor, 0.29, 0.05, [0, face * 1.15, 0], steel, 6);
+  }
+  rotor.add(new THREE.Mesh(mergeGeometries(spokes), ivory));
+  spokes.forEach(g => g.dispose());
+  group.userData.wheelMeshes = [rotor];
 
-  return g;
+  kitTerminal(group, 'M+', -0.59, 3.75, 1.05, KIT.coral, -1);
+  kitTerminal(group, 'M-', 0.59, 3.75, 1.05, KIT.ink, -1);
+  kitLabel(group, 'MOTION', 0.26, [0, 3.72, -0.23]);
+  kitLabel(group, '02 / DRIVE', 0.15, [0, 3.72, 0.2], '#648079');
+  return group;
 }
 
-// ── 7.4V LiPo battery ─────────────────────────────────────────
 export function makeBattery() {
-  const g = new THREE.Group();
-  g.userData = { type: 'battery', label: '7.4V LiPo', pins: [] };
-
-  const pack = new THREE.Mesh(new THREE.BoxGeometry(7.0, 1.8, 3.5), mat(0x2b3a55));
-  pack.position.y = 0.9;
-  pack.castShadow = true;
-  g.add(pack);
-
-  // yellow shrink-wrap bands
-  for (const x of [-2.6, 2.6]) {
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.86, 3.56), mat(0xd9b02a));
-    band.position.set(x, 0.9, 0);
-    g.add(band);
-  }
-
-  // terminal tabs
-  const tabR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.7), mat(0xcc3333));
-  tabR.position.set(-1.0, 1.9, -1.2);
-  g.add(tabR);
-  const tabB = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.7), blackMat);
-  tabB.position.set(1.0, 1.9, -1.2);
-  g.add(tabB);
-
-  addPin(g, '+', -1.0, 2.0, -1.2, -1);
-  addPin(g, '-',  1.0, 2.0, -1.2, -1);
-
-  const title = makeFlatLabel('7.4V LiPo 2S', 0.5, { color: '#dfe8f5' });
-  title.position.set(0, 1.82, 0.4);
-  title.rotation.z = 0;
-  g.add(title);
-
-  return g;
+  const group = new THREE.Group();
+  group.userData = { type: 'battery', label: '7.4V Power Pack', pins: [] };
+  const ivory = kitMaterial(KIT.ivory);
+  const ink = kitMaterial(KIT.ink);
+  const teal = kitMaterial(KIT.teal);
+  // Preserve the original 7 x 3.5 cm footprint and approximately 2 cm height.
+  kitBox(group, [7, 0.22, 3.5], [0, 0.13, 0], kitMaterial(KIT.rubber, { roughness: 0.8, finish: 'rough' }), 0.18);
+  kitBox(group, [7, 1.5, 3.5], [0, 0.94, 0], ivory, 0.28);
+  kitBox(group, [7.02, 0.06, 3.51], [0, 0.61, 0], ink, 0.08);
+  kitBox(group, [4.35, 0.06, 2.8], [-0.9, 1.701, 0], ink, 0.18);
+  kitBox(group, [0.53, 1.67, 3.52], [-3.07, 0.97, 0], teal, 0.18);
+  kitBox(group, [0.53, 1.67, 3.52], [3.07, 0.97, 0], teal, 0.18);
+  kitLabel(group, 'POWER', 0.54, [-1.06, 1.744, -0.51], '#f2eee4');
+  kitLabel(group, '7.4V / RECHARGEABLE', 0.19, [-0.89, 1.744, 0.21], '#95bab4');
+  kitLabel(group, 'INVENTION KIT', 0.18, [-1.28, 1.744, 0.85], '#f2eee4');
+  // Recessed charge window and three mint status segments are printed hardware,
+  // not a claim that a time-varying battery discharge model is being simulated.
+  kitBox(group, [0.82, 0.04, 1.55], [2.2, 1.71, 0.45], ink, 0.12);
+  for (let i = 0; i < 3; i++) kitBox(group, [0.46, 0.025, 0.21], [2.2, 1.742, 0.06 + i * 0.4],
+    teal, 0.04);
+  kitFasteners(group, [[-2.54, 1.7, -1.43], [-2.54, 1.7, 1.43],
+    [2.53, 1.7, -1.43], [2.53, 1.7, 1.43]], 0.09);
+  kitTerminal(group, '+', -1, 1.99, -1.2, KIT.coral, -1);
+  kitTerminal(group, '-', 1, 1.99, -1.2, KIT.ink, -1);
+  // Short molded terminal risers join the sockets to the lid.
+  kitBox(group, [0.65, 0.3, 0.64], [-1, 1.84, -1.2], ivory, 0.1);
+  kitBox(group, [0.65, 0.3, 0.64], [1, 1.84, -1.2], ivory, 0.1);
+  return group;
 }
