@@ -9,7 +9,7 @@
 <!-- viewport-fit=cover so the app can paint under the notch/home-indicator; user-scalable=no
      stops Safari's double-tap/pinch page-zoom from stealing 3D pinch/orbit gestures. -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>SelfBalance Lab — Robotics Creator</title>
+<title>SelfBalance — Invention Studio</title>
 <meta name="description" content="Build a robot from real components in your browser, wire the circuit, and watch a physics simulation run it. A natural-language assistant builds alongside you. Zero install.">
 <!-- theme-color: dark UI chrome; media-scoped so a light-theme browser UI matches too -->
 <meta name="theme-color" content="#0c1230" media="(prefers-color-scheme: dark)">
@@ -48,6 +48,7 @@
 <script src="https://unpkg.com/lucide@0.462.0" defer></script>
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/studio.css">
 <script type="importmap">
 {
   "imports": {
@@ -67,9 +68,15 @@
 
   <!-- LEFT: parts tray + checklist -->
   <aside id="left-panel">
+    <section id="starter-shelf" aria-label="Starter inventions">
+      <div class="shelf-heading">A little inspiration <span>01—03</span></div>
+      <button data-starter="pocket-breeze"><i data-lucide="fan"></i><span><b>Pocket breeze</b><small>A fan you can control</small></span><span class="starter-arrow">↗</span></button>
+      <button data-starter="switch-lamp"><i data-lucide="lamp"></i><span><b>Little light</b><small>Bright ideas start here</small></span><span class="starter-arrow">↗</span></button>
+      <button data-starter="button-buzzer"><i data-lucide="radio"></i><span><b>Secret signal</b><small>Press to make some noise</small></span><span class="starter-arrow">↗</span></button>
+    </section>
     <header class="panel-header">
       <span class="panel-icon"><i data-lucide="blocks"></i></span>
-      <span class="panel-heading"><span class="panel-kicker">BUILD</span><span class="panel-title">Pick your parts</span></span>
+      <span class="panel-heading"><span class="panel-kicker">BUILD</span><span class="panel-title">Make it yours</span></span>
       <button class="panel-min" data-panel="left-panel" aria-label="Minimize parts tray" title="Minimize">▾</button>
     </header>
     <p class="panel-intro">Drag a part into the room. Start simple—you can’t break anything here.</p>
@@ -81,7 +88,7 @@
     <div id="parts-tray"></div>
     <header class="panel-header">
       <span class="panel-icon is-yellow"><i data-lucide="cable"></i></span>
-      <span class="panel-heading"><span class="panel-kicker">CONNECTIONS</span><span class="panel-title">Make a loop</span></span>
+      <span class="panel-heading"><span class="panel-kicker">CONNECTIONS</span><span class="panel-title">Your connections</span></span>
     </header>
     <div id="checklist">
       <p class="hint">Place all parts, then wire them together.</p>
@@ -91,7 +98,7 @@
   <!-- CENTER: 3D workspace -->
   <main id="workspace">
     <div id="workspace-hud">
-      <i data-lucide="sparkles" aria-hidden="true"></i><span id="hud-status" role="status" aria-live="polite">Drag in a part and make something happen</span>
+      <i data-lucide="sparkles" aria-hidden="true"></i><span id="hud-status" role="status" aria-live="polite">Drag to explore · scroll to get closer</span>
     </div>
     <!-- First-run coach: a 5-step "build your first circuit" checklist that
          advances by watching real app state. Hidden once completed (persisted). -->
@@ -123,7 +130,7 @@
   <aside id="right-panel">
     <header class="panel-header">
       <span class="panel-icon"><i data-lucide="message-square"></i></span>
-      <span class="panel-heading"><span class="panel-kicker">ASSISTANT</span><span class="panel-title">Hephaestus</span></span>
+      <span class="panel-heading"><span class="panel-kicker">YOUR BUILD PARTNER</span><span class="panel-title">Hephaestus</span></span>
       <span id="firmware-file" class="sr-only">battery → motor</span>
       <button class="panel-min" data-panel="right-panel" aria-label="Minimize panel" title="Minimize">▾</button>
     </header>
@@ -132,16 +139,16 @@
     <div id="hephaestus" class="collapsed">
       <button id="hephaestus-toggle" aria-label="Toggle Hephaestus"><i data-lucide="sparkles"></i><span>Open assistant</span></button>
       <div id="hephaestus-panel">
-        <div class="hp-head"><span class="hp-avatar"><i data-lucide="bot"></i></span><span><b>Build with Hephaestus</b><small>Describe it. He’ll place and wire the parts.</small></span></div>
-        <div id="hephaestus-log"><div class="hp-msg hp-bot">What do you want to build? Try “make a light I can switch on.”</div></div>
+        <div class="hp-head"><span class="hp-avatar"><i data-lucide="bot"></i></span><span><b>Big ideas. Little inventions.</b><small>Tell me what you have in mind.</small></span></div>
+        <div id="hephaestus-log"><div class="hp-msg hp-bot">Let’s make something that does something. I can build and wire real parts, then help you experiment. What shall we invent?</div></div>
         <form id="hephaestus-form">
-          <input id="hephaestus-input" type="text" placeholder="Describe an invention…" autocomplete="off" />
+          <input id="hephaestus-input" type="text" aria-label="Describe your invention" placeholder="What if we made…" autocomplete="off" />
           <button type="submit" aria-label="Send"><i data-lucide="arrow-up"></i></button>
         </form>
       </div>
     </div>
     <section id="run-tools" aria-label="Test controls">
-      <div id="run-hint"><b>Test the build</b><span>The live circuit is ready when you are.</span></div>
+      <div id="run-hint"><b>Bring it to life</b><span>Test your invention with physics.</span></div>
       <button id="upload-btn"><span class="run-icon"><i data-lucide="play"></i></span><span>RUN</span></button>
     </section>
     <!-- The Inspector lives here, not in the left column. The left column was

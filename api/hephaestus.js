@@ -117,7 +117,8 @@ export default async function handler(req) {
 // dropping transforms/colors/meta so the context stays small.
 function summarize(doc) {
   return {
-    components: (doc.components || []).map(c => ({ id: c.id, type: c.type, params: c.params })),
+    name: doc.name,
+    components: (doc.components || []).map(c => ({ id: c.id, type: c.type, params: c.params, transform: c.transform })),
     nets: (doc.nets || []).map(n => ({ endpoints: n.endpoints })),
   };
 }

@@ -20,6 +20,7 @@ import { initCoach } from './app/coach.js';
 import { initPerf } from './app/perf.js';
 import { initTopbar } from './app/topbar.js';
 import { initMobileUI } from './app/mobile.js';
+import { initInventionStudio, addInventionMat } from './app/invention-studio.js';
 import { initProductMotion } from './app/motion.js';
 import { installErrorBoundary, isWebGLAvailable, showFatal } from './app/errors.js';
 import { migrateStorageKeys } from './app/storage.js';
@@ -90,6 +91,7 @@ scene.fog = null; // the room encloses the view; the studio fog would gray it ou
 assemblyDecor.length = 0;
 assemblyDecor.push(shadowCatcher, benchRoom.group);
 window.__benchRoom = benchRoom;
+addInventionMat(benchRoom);
 window.__view = { camera, controls, scene, renderer, setTheme }; // dev hook: camera, and the handles the theme test needs
 
 // Scan variant of the room (the augmented photogrammetry mesh) + a click-to-swap
@@ -263,9 +265,9 @@ const examples = initExamples({ api, hud, exitSim: () => exitSim() });
 // Anyone who wants the blank bench is one Clear board away.
 // The camera is not touched here: frameBench() at the end of boot composes the
 // same bench shot for every device, and the seeded circuit sits inside it.
-const coldOpened = api.get_document().components.length === 0 &&
+const coldOpened = !docSave.restored && api.get_document().components.length === 0 &&
   (() => {
-    const demo = EXAMPLES.find(e => e.id === 'pot-dimmer');
+    const demo = EXAMPLES.find(e => e.id === 'pocket-breeze');
     if (!demo) return false;
     seeding = true;
     try { examples.load(demo, { silent: true }); } finally { seeding = false; }
@@ -319,6 +321,7 @@ const mobileUI = initMobileUI({
 });
 window.__mobile = mobileUI;
 initProductMotion();
+initInventionStudio({ api, examples, frameBench, hud });
 
 // The legend teaches mouse verbs (right-click, R, scroll) that don't exist on a
 // touch screen. Coarse pointers get the gestures creator-assembly actually
@@ -393,15 +396,14 @@ document.getElementById('overlay-tour')?.addEventListener('click', () => {
 
 // ── upload / simulation ─────────────────────────────────────────
 const uploadBtn = document.getElementById('upload-btn');
-const uploadLabel = uploadBtn.querySelector('span');
+const uploadLabel = uploadBtn.querySelector('span:last-child');
 uploadBtn.addEventListener('click', async () => {
   if (uploadBtn.disabled) return;
 
   uploadBtn.classList.add('loading');
   uploadLabel.textContent = 'STARTING…';
-  await enterSim();   // loads Rapier + builds the doc-driven body
-  uploadBtn.classList.remove('loading');
-  uploadLabel.textContent = 'RUN';
+  try { await enterSim(); } catch { /* doEnterSim reports the failure */ }
+  finally { uploadBtn.classList.remove('loading'); uploadLabel.textContent = 'RUN'; }
 });
 
 // RUN: build the doc-driven motor body from the current document and spin it
@@ -425,21 +427,18 @@ async function doEnterSim() {
     throw e;   // surfaced to the caller (and the error boundary) instead of swallowed
   }
   set('mode', 'sim');
-  assemblyApi.group.visible = false;   // hides parts + wires (both live under the group)
-  for (const d of assemblyDecor) d.visible = false;
+  assemblyApi.group.visible = true;   // test the actual invention, in place
   // the room (and its lights) is gone in RUN — bring the studio rig back or the
   // sim arena renders unlit
-  for (const l of studioLights) l.visible = true;
+  for (const l of studioLights) l.visible = false;
   canvas.style.cursor = 'default';
   controlsLegend.classList.add('hidden');
   creatorSim.reset();
   creatorSim.start();
   // frame the wheels
-  controls.enabled = false;
-  camera.position.set(14, 12, 20);
-  camera.lookAt(0, 6, 0);
+  controls.enabled = true;
   hud.simHud.classList.remove('hidden');
-  hud.setStatus('It’s moving! Your circuit is powering real physics.');
+  hud.setStatus('Testing your invention. Change a control and see what happens.');
   audio.startMotor();
   trackOnce(EVENTS.RUN_ENTER, { components: api.get_document().components.length });
 }
@@ -448,6 +447,8 @@ function exitSim() {
   set('mode', 'assembly');
   audio.stopMotor();
   creatorSim.hide();
+  api.setSimState({});
+  assemblyApi.sync();
   assemblyApi.group.visible = true;
   for (const d of assemblyDecor) d.visible = true;
   for (const l of studioLights) l.visible = false;   // back to the room's own lighting
@@ -468,12 +469,12 @@ function exitSim() {
 // would clamp the pull straight back out). The threshold is deliberately below
 // a phone's portrait aspect — measured on a 390×618 canvas the stock shot still
 // frames the whole bench, and pulling back there only made the parts small.
-const BENCH_TARGET = { x: 4, y: 0, z: 2 };
-const BENCH_EYE = { x: 34, y: 80, z: 93 };
+const BENCH_TARGET = { x: 0, y: 2, z: 0 };
+const BENCH_EYE = { x: 18, y: 34, z: 42 };
 const BENCH_BASE = Math.hypot(BENCH_EYE.x - BENCH_TARGET.x, BENCH_EYE.y - BENCH_TARGET.y, BENCH_EYE.z - BENCH_TARGET.z);
 function frameBench() {
   const aspect = camera.aspect || 1;
-  const pull = Math.min(1.35, Math.max(1, 0.55 / aspect));
+  const pull = Math.min(1.7, Math.max(1, 0.9 / aspect));
   const dist = BENCH_BASE * pull;
   controls.target.set(BENCH_TARGET.x, BENCH_TARGET.y, BENCH_TARGET.z);
   camera.position.set(
@@ -482,7 +483,7 @@ function frameBench() {
     BENCH_TARGET.z + ((BENCH_EYE.z - BENCH_TARGET.z) / BENCH_BASE) * dist,
   );
   controls.maxDistance = Math.max(175, dist * 1.2);
-  camera.fov = 55;
+  camera.fov = 42;
   camera.updateProjectionMatrix();
   camera.lookAt(controls.target.x, controls.target.y, controls.target.z);
   controls.update();
@@ -496,21 +497,19 @@ function animate() {
   const dt = (now - last) / 1000;
   last = now;
 
-  if (state.mode === 'assembly') {
-    controls.update();
-    floorUniforms.uTime.value += dt;
-    assemblyApi.animate(dt);   // current-flow charges along wired nets
-  }
+  controls.update();
+  floorUniforms.uTime.value += dt;
 
   if (state.mode === 'sim') {
-    creatorSim.step(dt);
+    creatorSim.step(dt, api.get_document());
     // motor hum tracks the fastest wheel's ω
     let wmax = 0;
     for (const m of creatorSim.motors) wmax = Math.max(wmax, Math.abs(creatorSim.omega(m.id)));
     audio.setMotor(wmax * 0.3);
-    camera.lookAt(0, 6, 0);
+
   }
 
+  assemblyApi.animate(Math.min(dt, 0.1));
   composer.render();
 }
 animate();

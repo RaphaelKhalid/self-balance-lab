@@ -1,10 +1,17 @@
 // RobotDoc v2 persistence: localStorage + shareable #build= URL, with a v1→v2
 // migration (the old placedCount/wires save loads as a doc). This is the same
 // forward-compatible JSON a cloud document holds.
-import { DOC_VERSION, emptyDoc } from '../model/doc.js';
+import { DOC_VERSION, emptyDoc, cloneDoc } from '../model/doc.js';
 
 const DOC_KEY = 'gyro-doc-v2';
 const LEGACY_PREFIX = 'sbl-save-v1';   // old placedCount-based slots
+
+// A momentary button is never held down when a build is reopened or shared.
+function persistentDoc(doc) {
+  const copy = cloneDoc(doc);
+  for (const c of copy.components || []) if (c.type === 'push_button') c.params = { ...c.params, closed: false };
+  return copy;
+}
 
 function encode(obj) {
   const b64 = window.btoa(window.unescape(encodeURIComponent(JSON.stringify(obj))));
@@ -78,7 +85,7 @@ export function initDocSave(api, { onFlash } = {}) {
                   (stored && stored.v === DOC_VERSION && stored) ||
                   migrated;
   if (initial) {
-    api.loadDocument(initial);
+    api.loadDocument(persistentDoc(initial));
     if (shared) {
       try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
       onFlash?.('Loaded a shared build', 'ok');
@@ -93,7 +100,7 @@ export function initDocSave(api, { onFlash } = {}) {
   function flush() {
     if (!pending) return;
     clearTimeout(timer); timer = null;
-    try { localStorage.setItem(DOC_KEY, JSON.stringify(pending)); } catch { /* quota/private */ }
+    try { localStorage.setItem(DOC_KEY, JSON.stringify(persistentDoc(pending))); } catch { /* quota/private */ }
     pending = null;
   }
   history.onChange = (doc) => {
@@ -109,8 +116,8 @@ export function initDocSave(api, { onFlash } = {}) {
   window.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 
   function shareUrl() {
-    const doc = api.get_document();
+    const doc = persistentDoc(api.get_document());
     return `${window.location.origin}${window.location.pathname}#build=${encode(doc)}`;
   }
-  return { shareUrl };
+  return { shareUrl, restored: !!initial };
 }

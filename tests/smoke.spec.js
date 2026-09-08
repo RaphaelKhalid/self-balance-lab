@@ -148,6 +148,7 @@ test('the inspector renders the live document + solved current in the DOM', asyn
     api.connect({ from: 'bat1.+', to: 'motor1.A' });
     api.connect({ from: 'bat1.-', to: 'motor1.B' });
   });
+  await page.locator('#circuit-details-toggle').click();
   // the panel polls (~400ms) — wait for the component id and its amps to appear
   await expect(page.locator('#inspector .insp-id', { hasText: 'motor1' })).toBeVisible({ timeout: 5000 });
   await expect(page.locator('#inspector')).toContainText(/A\b/);   // a current reading
@@ -204,7 +205,7 @@ test('the activation funnel fires circuit_ok exactly once, on the first working 
 });
 
 test('the cold-open seed does not count as activation, but building on it does', async ({ page }) => {
-  // The first visit now lands on a live battery→potentiometer→motor circuit that
+  // The first visit now lands on a live battery→switch→potentiometer→fan circuit that
   // already solves. circuit_ok is the activation metric precisely because it can
   // only be reached by building something, so the seed must not fire it — and a
   // visitor who then builds on that seed must still be counted exactly once.
@@ -220,7 +221,7 @@ test('the cold-open seed does not count as activation, but building on it does',
     components: window.__api.get_document().components.length,
     ok: window.__api.read_electrical()?.ok,
   }));
-  expect(seeded.components).toBe(3);
+  expect(seeded.components).toBe(4);
   expect(seeded.ok).toBe(true);
 
   const funnel = () => page.evaluate(
@@ -229,7 +230,9 @@ test('the cold-open seed does not count as activation, but building on it does',
   // a solving circuit nobody built is not activation
   expect(await funnel()).toBe(0);
   // neither is turning the seeded knob — same topology, no build step
-  await page.evaluate(() => window.__api.set_param({ id: 'pot1', param: 'resistance', value: 12 }));
+  const knobEdit = await page.evaluate(() => window.__api.set_param({ id: 'pot1', key: 'resistance', value: 12 }));
+  expect(knobEdit.ok).toBe(true);
+  expect(await page.evaluate(() => window.__api.get_document().components.find(c => c.id === 'pot1').params.resistance)).toBe(12);
   expect(await funnel()).toBe(0);
 
   // adding a part of their own arms it, and it fires once

@@ -22,3 +22,6 @@ playwright-report/
 
 # mcp-use scratch: local session store + generated tool typings
 .mcp-use/
+
+# Local visual review captures
+artifacts/

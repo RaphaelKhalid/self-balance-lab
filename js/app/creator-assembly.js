@@ -16,14 +16,16 @@ import { makeFlatLabel } from '../labels.js';
 import { loadRapier } from '../sim/rapier.js';
 import { pinInfo } from '../glossary.js';
 import { audio } from '../audio.js';
-import { state, subscribe } from './state.js';
+import { state } from './state.js';
 import { initProps } from './props.js';
 import { KIND_LABEL } from './hud.js';
 import { track, trackOnce, EVENTS } from './analytics.js';
 import { partMat } from './part-materials.js';
+import { makeSwitchKit, makePowerKnob, makeLedKit, makeLampKit, makeFanKit } from './invention-models.js';
 
 // tray metadata (name/desc/help) per library type — the human-facing card copy.
 const CARD = {
+  motor_fan: { name: 'Desk Fan', icon: 'fan', swatch: '#4aada0', desc: 'Make your own little breeze', help: 'Wire A and B to power the fan. Add a power knob to change its speed.' },
   battery: { name: 'Battery', icon: 'battery-charging', swatch: '#3d5a8f', desc: 'Gives your invention power',
     help: 'The power source. Its + and − terminals push current through whatever you wire across them.' },
   motor: { name: 'Motor + Wheel', icon: 'settings', swatch: '#f0c020', desc: 'Turns electricity into motion',
@@ -61,7 +63,7 @@ const CARD = {
 // tray category per type — powers the filter chips as the catalog grows.
 const CATEGORY = {
   battery: 'Power',
-  motor: 'Output', led: 'Output', lamp: 'Output', buzzer: 'Output', servo: 'Output',
+  motor_fan: 'Output', motor: 'Output', led: 'Output', lamp: 'Output', buzzer: 'Output', servo: 'Output',
   resistor: 'Passive', capacitor: 'Passive', diode: 'Passive', fuse: 'Passive',
   switch: 'Control', push_button: 'Control', potentiometer: 'Control', relay: 'Control',
   photoresistor: 'Sensor', thermistor: 'Sensor',
@@ -123,29 +125,7 @@ function makeResistorMesh() {
 
 // switch: base + tilting lever + indicator dot. Click the body to toggle (wired
 // in the click handler); the lever/indicator reflect params.closed via sync().
-function makeSwitchMesh() {
-  const g = new THREE.Group();
-  g.userData = { type: 'switch', pins: [] };
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(2.6, 0.9, 1.8),
-    partMat({ color: 0x2a2f3a, roughness: 0.7, metalness: 0.2 }));
-  base.position.y = 0.45; base.castShadow = true;
-  g.add(base);
-  const lever = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 0.35, 0.6),
-    partMat({ color: 0xb0b4bc, metalness: 0.6, roughness: 0.4 }));
-  lever.position.set(0, 1.05, 0); lever.rotation.z = 0.4;
-  lever.userData.role = 'sw-lever';
-  g.add(lever);
-  const ind = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 12),
-    partMat({ color: 0x333a33, emissive: 0x000000, emissiveIntensity: 1 }));
-  ind.position.set(0.95, 0.95, 0.95); ind.userData.role = 'sw-ind';
-  g.add(ind);
-  addLeadPin(g, 'A', -1.7, 0.9, 0);
-  addLeadPin(g, 'B', 1.7, 0.9, 0);
-  return g;
-}
+
 
 // reflect a switch component's closed state on its lever + indicator.
 function updateSwitchVisual(group, closed) {
@@ -157,24 +137,7 @@ function updateSwitchVisual(group, closed) {
 
 // LED: a domed lens (role 'led-lens', glows with current) on two legs (A = long
 // anode leg, K = short cathode leg). The dome catches the bloom pass when lit.
-function makeLedMesh() {
-  const g = new THREE.Group();
-  g.userData = { type: 'led', pins: [] };
-  const lens = new THREE.Mesh(
-    new THREE.SphereGeometry(0.8, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.62),
-    partMat({ color: 0xff5566, emissive: 0xff2233,
-      emissiveIntensity: 0, roughness: 0.25, metalness: 0.1,
-      transparent: true, opacity: 0.9 }));
-  lens.position.y = 1.5; lens.userData.role = 'led-lens'; lens.castShadow = true;
-  g.add(lens);
-  const collar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.82, 0.82, 0.5, 20),
-    partMat({ color: 0xcc3344, roughness: 0.4 }));
-  collar.position.y = 1.05; g.add(collar);
-  addLeadPin(g, 'A', -0.4, 0.0, 0);   // long leg = anode
-  addLeadPin(g, 'K', 0.4, 0.0, 0);    // short leg = cathode
-  return g;
-}
+
 
 // brightness ∝ current toward its rated max; dark when reverse-biased / off.
 function updateLedVisual(group, amps, maxCurrent) {
@@ -186,28 +149,7 @@ function updateLedVisual(group, amps, maxCurrent) {
 
 // potentiometer: a body with a turnable knob (role 'pot-knob') + a pointer
 // notch, on two leads (A, B). The knob's angle reflects the resistance.
-function makePotMesh() {
-  const g = new THREE.Group();
-  g.userData = { type: 'potentiometer', pins: [] };
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(2.2, 0.9, 2.2),
-    partMat({ color: 0x2a3550, roughness: 0.7, metalness: 0.2 }));
-  body.position.y = 0.45; body.castShadow = true;
-  g.add(body);
-  const knob = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.8, 0.8, 0.8, 20),
-    partMat({ color: 0x8fb3ff, roughness: 0.4, metalness: 0.3 }));
-  knob.position.y = 1.2; knob.userData.role = 'pot-knob'; knob.castShadow = true;
-  const notch = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.2, 0.7),
-    partMat({ color: 0x0a0f1a, roughness: 0.5 }));
-  notch.position.set(0, 0.5, 0.35);
-  knob.add(notch);
-  g.add(knob);
-  addLeadPin(g, 'A', -1.4, 0.45, 0);
-  addLeadPin(g, 'B', 1.4, 0.45, 0);
-  return g;
-}
+
 
 // rotate the knob to reflect the resistance fraction (0 = full CCW, 1 = full CW)
 function updatePotVisual(group, frac) {
@@ -261,22 +203,7 @@ function updateButtonVisual(group, closed) {
 }
 
 // lamp: a glass bulb on a brass screw base with a filament that glows w/ current.
-function makeLampMesh() {
-  const g = new THREE.Group();
-  g.userData = { type: 'lamp', pins: [] };
-  const baseM = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.62, 0.62, 0.9, 16),
-    partMat({ color: 0xb8860b, roughness: 0.4, metalness: 0.7 }));
-  baseM.position.y = 0.9; g.add(baseM);
-  const glass = new THREE.Mesh(new THREE.SphereGeometry(1.0, 22, 18),
-    partMat({ color: 0xfff4d0, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.4 }));
-  glass.position.y = 2.2; glass.castShadow = true; g.add(glass);
-  const fil = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.06, 8, 16),
-    partMat({ color: 0xffcf6b, emissive: 0xffaa22, emissiveIntensity: 0 }));
-  fil.position.y = 2.1; fil.userData.role = 'lamp-fil'; g.add(fil);
-  attachLibraryPins(g, 'lamp', { y: 0.35, spread: 1.6 });
-  return g;
-}
+
 function updateLampVisual(group, amps, maxCurrent) {
   const frac = Math.max(0, Math.min(1, Math.abs(amps || 0) / Math.max(maxCurrent || 0.5, 1e-6)));
   group.traverse((o) => {
@@ -414,9 +341,9 @@ function makeRelayMesh() {
 }
 
 const FACTORY = {
-  battery: makeBattery, motor: makeMotorAB, resistor: makeResistorMesh,
-  switch: makeSwitchMesh, led: makeLedMesh, potentiometer: makePotMesh,
-  push_button: makeButtonMesh, lamp: makeLampMesh, buzzer: makeBuzzerMesh,
+  battery: makeBattery, motor: makeMotorAB, motor_fan: makeFanKit, resistor: makeResistorMesh,
+  switch: makeSwitchKit, led: makeLedKit, potentiometer: makePowerKnob,
+  push_button: makeButtonMesh, lamp: makeLampKit, buzzer: makeBuzzerMesh,
   diode: makeDiodeMesh, photoresistor: makePhotoresistorMesh, thermistor: makeThermistorMesh,
   fuse: makeFuseMesh, capacitor: makeCapacitorMesh, servo: makeServoMesh, relay: makeRelayMesh,
 };
@@ -479,7 +406,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       const wb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x, GROUND_Y + 3, z));
       world.createCollider(RAPIER.ColliderDesc.cuboid(hx, 4, hz), wb);
     }
-    phys = { RAPIER, world, bodies: new Map() };
+    phys = { RAPIER, world, bodies: new Map(), bounds: new Map(), poses: new Map() };
     ensureBodies();   // parts placed before Rapier finished loading
   }
 
@@ -511,7 +438,16 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     const restY = GROUND_Y + hy - cy;
     // stagger drops + jitter XZ so coincident drops don't launch (overlap solve)
     const jit = () => (Math.random() - 0.5) * 0.8;
-    const y = dropIn ? restY + 5 + phys.bodies.size * (hy * 2 + 1) : Math.max(p[1], restY);
+    let y = Math.max(p[1], restY) + (dropIn ? 0.8 : 0);
+    // Only raise a drop above parts it actually overlaps. A large fourth part
+    // must not spawn forty centimeters above an otherwise empty spot.
+    if (dropIn) for (const [id, other] of phys.bodies) {
+      const b = phys.bounds.get(id), t = other.translation();
+      if (b && Math.abs(p[0] + cx - t.x - b.cx) < hx + b.hx &&
+          Math.abs(p[2] + cz - t.z - b.cz) < hz + b.hz) {
+        y = Math.max(y, t.y + b.cy + b.hy - cy + hy + 0.5);
+      }
+    }
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic().setTranslation(p[0] + jit(), y, p[2] + jit())
         .enabledRotations(false, false, false)      // stay upright; yaw is doc-driven
@@ -520,6 +456,8 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(cx, cy, cz)
         .setFriction(0.9).setRestitution(0).setDensity(1), body);
     phys.bodies.set(c.id, body);
+    phys.bounds.set(c.id, { hx, hy, hz, cx, cy, cz });
+    phys.poses.set(c.id, JSON.stringify(c.transform));
     return body;
   }
 
@@ -528,7 +466,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     if (!phys) return;
     const live = new Set(api.get_document().components.map(c => c.id));
     for (const [id, body] of phys.bodies) {
-      if (!live.has(id)) { phys.world.removeRigidBody(body); phys.bodies.delete(id); }
+      if (!live.has(id)) { phys.world.removeRigidBody(body); phys.bodies.delete(id); phys.bounds.delete(id); phys.poses.delete(id); }
     }
     for (const c of api.get_document().components) {
       if (!phys.bodies.has(c.id)) makeBody(c, true);
@@ -733,7 +671,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     for (const c of doc.components) {
       let g = meshes.get(c.id);
       if (!g) {
-        g = (FACTORY[baseType(c.type)] || makeBattery)();
+        g = (FACTORY[c.type] || FACTORY[baseType(c.type)] || makeBattery)();
         for (const p of g.userData.pins) {
           const epId = `${c.id}.${p.name}`;
           p.obj.userData.endpointId = epId;
@@ -747,7 +685,15 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       // yaw is always doc-driven; position is owned by physics once a body
       // exists (animate copies it), so only seed position when there's no body.
       g.rotation.set(r[0], r[1], r[2]);
-      if (!phys?.bodies.has(c.id)) g.position.set(p[0], p[1], p[2]);
+      const body = phys?.bodies.get(c.id);
+      const pose = JSON.stringify(c.transform);
+      if (body && phys.poses.get(c.id) !== pose && moving?.id !== c.id) {
+        body.setTranslation({ x: p[0], y: p[1], z: p[2] }, true);
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        phys.poses.set(c.id, pose);
+        g.position.set(...p);
+      }
+      if (!body) g.position.set(p[0], p[1], p[2]);
       if (baseType(c.type) === 'switch') updateSwitchVisual(g, c.params?.closed === true);
       if (baseType(c.type) === 'push_button') updateButtonVisual(g, c.params?.closed === true);
       if (baseType(c.type) === 'lamp') updateLampVisual(g, elec?.current?.[c.id], c.params?.maxCurrent);
@@ -1032,6 +978,16 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     };
   }
 
+  let heldBenchButton = null;
+  function releaseBenchButton() {
+    if (!heldBenchButton) return;
+    api.set_param_live({ id: heldBenchButton, key: 'closed', value: false });
+    heldBenchButton = null;
+    controls.enabled = true;
+  }
+  window.addEventListener('pointercancel', releaseBenchButton);
+  window.addEventListener('blur', releaseBenchButton);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseBenchButton(); });
   canvas.addEventListener('pointerdown', (e) => {
     if (state.mode !== 'assembly') return;
     lastPointerType = e.pointerType || 'mouse';
@@ -1041,6 +997,18 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       removeUnderPointer();
       e.preventDefault();
       return;
+    }
+    if (e.button === 0 && !pickPin()) {
+      const id = pickComponent();
+      const part = meshes.get(id);
+      const hit = part && raycaster.intersectObject(part, true)[0]?.object;
+      if (hit?.userData.role === 'btn-cap') {
+        heldBenchButton = id;
+        api.set_param_live({ id, key: 'closed', value: true });
+        controls.enabled = false;
+        suppressClick = true;
+        return;
+      }
     }
     // touch/pen: a press that stays put for half a second removes instead
     if (e.pointerType && e.pointerType !== 'mouse') startLongPress(e);
@@ -1056,6 +1024,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     }
   });
   window.addEventListener('pointerup', () => {
+    releaseBenchButton();
     cancelLongPress();
     if (!moving) return;
     const id = moving.id;
@@ -1119,6 +1088,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       const swId = pickSwitch();
       if (swId) {
         const comp = api.get_document().components.find(c => c.id === swId);
+        if (baseType(comp?.type) === 'push_button') return;
         const now = comp?.params?.closed === true;
         api.set_param({ id: swId, key: 'closed', value: !now });
         hud.flash(`${swId} ${!now ? 'closed' : 'opened'}`, 'ok'); audio.ui();
@@ -1186,7 +1156,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
   // A physical input you drag near a sensor to change its resistance live. Only
   // shown while a matching sensor is on the bench; hidden in the RUN sim.
   const props = initProps({ canvas, scene, camera, controls, api, hud, benchRoom });
-  subscribe('mode', (m) => { props.root.visible = m === 'assembly'; });
+
 
   function animate(dt) {
     let elec = null;
@@ -1194,6 +1164,15 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     const cur = elec?.current || {};
     const powered = elec?.ok !== false;
     const doc = api.get_document();
+    for (const c of doc.components) {
+      const mesh = meshes.get(c.id);
+      if (!mesh) continue;
+      if (baseType(c.type) === 'push_button') updateButtonVisual(mesh, c.params.closed === true);
+      if (baseType(c.type) === 'led') updateLedVisual(mesh, cur[c.id], c.params.maxCurrent);
+      if (baseType(c.type) === 'lamp') updateLampVisual(mesh, cur[c.id], c.params.maxCurrent);
+    }
+
+    audio.setBuzzer?.(powered ? Math.max(0, ...doc.components.filter(c => baseType(c.type) === 'buzzer').map(c => Math.abs(cur[c.id] || 0))) : 0);
 
     // drive interactive sensors (thermistor/photoresistor) from prop proximity
     const sensors = [];
@@ -1206,7 +1185,7 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
     props.tick(sensors, dt);
 
     // ── real gravity + collisions: step Rapier, copy bodies → meshes ──
-    if (phys) {
+    if (phys && state.mode === 'assembly') {
       // skip the whole world when nothing's moving (all bodies asleep, no drag)
       // — keeps idle build mode cheap and out of the RUN sim's way.
       let anyAwake = !!moving;
@@ -1228,7 +1207,9 @@ export function initCreatorAssembly({ canvas, scene, camera, controls, api, hud,
       if (baseType(c.type) !== 'motor') continue;
       const wheels = meshes.get(c.id)?.userData.wheelMeshes;
       if (!wheels) continue;
-      const spin = (powered ? (cur[c.id] || 0) : 0) * dt * 2.4;
+      const spin = state.mode === 'sim'
+        ? (api.read_telemetry().omega?.[c.id] || 0) * dt
+        : (powered ? (cur[c.id] || 0) : 0) * dt * 12;
       if (spin) for (const w of wheels) w.rotateOnAxis(_spinAxis, spin);
     }
 

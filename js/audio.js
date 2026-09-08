@@ -16,6 +16,8 @@ class Audio {
     this.ctx = null;
     this.master = null;
     this.motor = null;                       // { osc, gain, filter }
+    this.buzzer = null;                      // { osc, gain, level }
+    this.buzzerPower = 0;                    // latest solved current, even before audio unlocks
     this.enabled = true;
     try { this.enabled = localStorage.getItem('sbl-muted') !== '1'; } catch { /* ignore */ }
     this.ambientOn = false;
@@ -38,12 +40,14 @@ class Audio {
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.setBuzzer(this.buzzerPower);
   }
 
   setEnabled(on) {
     this.enabled = on;
     try { localStorage.setItem('sbl-muted', on ? '0' : '1'); } catch {}
     if (this.master) this.master.gain.value = on ? 0.9 : 0;
+    this.setBuzzer(this.buzzerPower);
   }
 
   // one shaped oscillator note
@@ -108,6 +112,41 @@ class Audio {
     this.motor = null;
   }
 
+  // The buzzer follows actual solved current. Calling this while audio is
+  // locked only remembers the signal; resume() starts it on a user gesture.
+  // Fade out before stopping, and disconnect ended nodes so repeated taps do
+  // not leave a growing audio graph behind.
+  setBuzzer(power) {
+    this.buzzerPower = Number.isFinite(power) ? Math.abs(power) : 0;
+    const level = this.enabled && this.buzzerPower > 0.0001
+      ? Math.min(0.065, this.buzzerPower * 0.65) : 0;
+    if (!this.ctx || !this.master) return;
+    const now = this.ctx.currentTime;
+    if (!level) {
+      if (!this.buzzer) return;
+      const { osc, gain } = this.buzzer;
+      gain.gain.setTargetAtTime(0, now, 0.008);
+      osc.stop(now + 0.06);
+      this.buzzer = null;
+      return;
+    }
+    if (!this.buzzer) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 740;
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(this.master);
+      osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+      osc.start();
+      this.buzzer = { osc, gain, level: 0 };
+    }
+    if (Math.abs(this.buzzer.level - level) > 0.0001) {
+      this.buzzer.gain.gain.setTargetAtTime(level, now, 0.012);
+      this.buzzer.level = level;
+    }
+  }
   // ── ambient loop (opt-in, lazily fetched) ─────────────────────────────
   // The asset is only requested the first time this is switched on, so it costs
   // a visitor who never wants it exactly zero bytes. It also rides its own gain
