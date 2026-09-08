@@ -1,7 +1,7 @@
 {
   "name": "selfbalance-lab",
   "version": "1.0.0",
-  "description": "SelfBalance Lab \u2014 a browser robotics creator space. Build a robot from real components, wire the circuit, and watch a Rapier physics simulation run it. A natural-language assistant (Gemini) drives the same scriptable API the UI does.",
+  "description": "SelfBalance — an AI invention studio for kids ages 10–14. Build and remix 3D electronic inventions with real DC circuits, motor physics, and a tool-calling assistant.",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
@@ -16,16 +16,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RaphaelKhalid/selfbalance-lab.git"
+    "url": "git+https://github.com/RaphaelKhalid/self-balance-lab.git"
   },
-  "keywords": [],
+  "keywords": [
+    "invention-studio",
+    "electronics",
+    "circuit-simulator",
+    "threejs",
+    "rapier",
+    "educational",
+    "ai"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/RaphaelKhalid/selfbalance-lab/issues"
+    "url": "https://github.com/RaphaelKhalid/self-balance-lab/issues"
   },
-  "homepage": "https://github.com/RaphaelKhalid/selfbalance-lab#readme",
+  "homepage": "https://selfbalance-lab.vercel.app/",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",

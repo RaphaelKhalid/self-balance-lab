@@ -1,4 +1,8 @@
 # YC application — working doc
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
+
+
 
 Synthesis of a three-way founder review (product/market, traction/GTM, tech/risk) run 2026-08-03. Where the three disagreed, the disagreement is recorded rather than smoothed over.
 

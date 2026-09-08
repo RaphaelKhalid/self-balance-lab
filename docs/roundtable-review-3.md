@@ -1,4 +1,8 @@
 # Round-Table Review #3 — User-tested, pre-Phase-C
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
+
+
 
 > **Date:** 2026-07-13. Five agents: two **users** (a 13-yo student on a laptop, a HS
 > STEM teacher on a 9th-gen iPad) did a first-run, gave interviews to the **PM**, who

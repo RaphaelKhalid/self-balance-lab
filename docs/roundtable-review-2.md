@@ -1,4 +1,8 @@
 # GYRO Round-Table Review #2 — after Phase A + B
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
+
+
 
 > **Date:** 2026-07-13. Three role reviewers (SWE, PM, Designer) re-ran against the
 > live codebase after Phase A (`364b78c`) and Phase B (`cfaf9de`) landed, to decide

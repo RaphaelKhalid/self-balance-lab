@@ -1,4 +1,8 @@
 # Pivot kickoff prompt (Milestone 1)
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
+
+
 
 > Copy everything below into a fresh Claude Code session in this repo.
 

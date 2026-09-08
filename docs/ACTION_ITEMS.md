@@ -1,4 +1,8 @@
 # Action items — assets, fidelity, and codebase
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
+
+
 
 From three research streams run 2026-08-03 (browser learning sims / professional robotics + electronics simulators / web 3D asset pipelines) plus a direct audit of the repo. Every item names a specific tool, API or file. Effort is in engineer-hours.
 

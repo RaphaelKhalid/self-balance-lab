@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <radialGradient id="glow" cx="78%" cy="32%" r="55%">
-      <stop offset="0%" stop-color="#1c1403"/>
-      <stop offset="100%" stop-color="#0a0d12"/>
-    </radialGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#glow)"/>
-  <g transform="translate(90,250)">
-    <circle cx="55" cy="55" r="52" fill="none" stroke="#ffb000" stroke-width="10"/>
-    <path d="M55 3 a52 52 0 0 1 0 104 z" fill="#ffb000"/>
+  <defs><clipPath id="preview"><rect x="462" y="153" width="690" height="431" rx="18"/></clipPath></defs>
+  <rect width="1200" height="630" fill="#fafbf8"/>
+  <rect x="48" y="45" width="42" height="42" rx="12" fill="#267967"/>
+  <path d="m69 53 4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="106" y="76" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#23332d">SelfBalance</text>
+  <text x="48" y="167" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="2" fill="#267967">THE AI INVENTION STUDIO</text>
+  <g font-family="Arial,sans-serif" font-size="50" font-weight="700" fill="#23332d">
+    <text x="46" y="246">Make something</text><text x="46" y="312">that does</text><text x="46" y="378">something.</text>
   </g>
-  <text x="230" y="300" font-family="Space Grotesk, Inter, sans-serif" font-size="82" font-weight="700" fill="#d3dce9" letter-spacing="2">SelfBalance Lab</text>
-  <text x="232" y="360" font-family="Inter, sans-serif" font-size="30" fill="#ffb000" letter-spacing="6">GYRO · ROBOTICS SIMULATOR</text>
-  <text x="232" y="430" font-family="Inter, sans-serif" font-size="30" fill="#868fa0">Assemble it · wire it · tune a real PID loop · feel the physics.</text>
+  <text x="48" y="447" font-family="Arial,sans-serif" font-size="21" fill="#54645b">Real circuits. 3D inventions.</text>
+  <text x="48" y="478" font-family="Arial,sans-serif" font-size="21" fill="#54645b">A build partner for every what-if.</text>
+  <text x="48" y="572" font-family="Arial,sans-serif" font-size="17" fill="#267967">For curious minds, ages 10–14.</text>
+  <image href="assets/studio-preview.jpg" x="462" y="153" width="690" height="431" clip-path="url(#preview)"/>
+  <rect x="462" y="153" width="690" height="431" rx="18" fill="none" stroke="#dce1d9"/>
 </svg>

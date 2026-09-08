@@ -1,4 +1,4 @@
-/* ── SelfBalance Lab landing page ─────────────────────────────────────────
+/* ── SelfBalance invention studio landing pages ─────────────────────────────────────────
    Standalone marketing page. Re-declares a subset of the app's
    design tokens (css/tokens.css) so it reads as of-a-piece with the
    product, but stays fully self-contained. Dark is default; light
@@ -26,14 +26,14 @@
   --text: var(--gray-12);
   --text-dim: var(--gray-11);
 
-  --amber-9:  #ffb000;
-  --amber-10: #ffbe2e;
-  --amber-11: #ffc94d;
-  --accent: var(--amber-9);
-  --accent-hover: var(--amber-10);
-  --accent-text: var(--amber-11);
-  --accent-glow: rgba(255, 176, 0, 0.32);
-  --accent-soft: rgba(255, 176, 0, 0.09);
+  --mint-9:  #72c9ae;
+  --mint-10: #91dbc3;
+  --mint-11: #a9dfce;
+  --accent: var(--mint-9);
+  --accent-hover: var(--mint-10);
+  --accent-text: var(--mint-11);
+  --accent-glow: rgba(114, 201, 174, 0.32);
+  --accent-soft: rgba(114, 201, 174, 0.09);
   --green: #46e08f;
   --red: #ff6b6b;
   --cyan: #4fd6e0;
@@ -62,14 +62,14 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --gray-1: #f7f9fc; --gray-2: #ffffff; --gray-3: #f4f6fa; --gray-4: #e9edf4;
+    --gray-1: #fafbf8; --gray-2: #ffffff; --gray-3: #f4f6fa; --gray-4: #e9edf4;
     --gray-6: #d5dbe6; --gray-7: #c2cad9; --gray-8: #a7b1c4;
     --gray-11: #5c6878; --gray-12: #1c2430;
-    --accent: #a15c00;
-    --accent-hover: #b56b0a;
-    --accent-text: #8a4f00;
-    --accent-glow: rgba(161, 92, 0, 0.22);
-    --accent-soft: rgba(161, 92, 0, 0.10);
+    --accent: #267967;
+    --accent-hover: #1d6555;
+    --accent-text: #246b5c;
+    --accent-glow: rgba(38, 121, 103, 0.22);
+    --accent-soft: rgba(38, 121, 103, 0.10);
     --green: #14803c;
     --red: #cf222e;
     --cyan: #0a7d8a;
@@ -178,7 +178,7 @@ h1.headline {
   letter-spacing: -0.02em; margin: 22px 0 0; max-width: 15ch;
 }
 h1.headline .grad {
-  background: linear-gradient(100deg, var(--accent), var(--amber-11, #ffc94d) 60%, var(--cyan));
+  background: linear-gradient(100deg, var(--accent), var(--mint-11, #a9dfce) 60%, var(--cyan));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .subhead { font-size: clamp(1.05rem, 2.2vw, 1.3rem); color: var(--text-dim); max-width: 54ch; margin: 22px 0 0; }
@@ -359,3 +359,9 @@ footer .fine { font-size: 12.5px; width: 100%; color: var(--text-dim); opacity: 
   footer nav { gap: 6px 14px; }
   footer nav a { min-height: 40px; display: inline-flex; align-items: center; }
 }
+
+/* Shared product photograph for both public entry pages. */
+.studio-preview { display: block; width: 100%; height: auto; }
+@media (prefers-color-scheme: light) { .btn-primary, .skip { color: #fff; } }
+
+@media (prefers-color-scheme: light) { h1.headline .grad { background: none; color: var(--accent-text); -webkit-text-fill-color: currentColor; } }

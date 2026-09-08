@@ -3,7 +3,7 @@
 The [SelfBalance Lab](https://selfbalance-lab.vercel.app) circuit sandbox, exposed as MCP
 tools. An agent can place components, wire their pins, and get back **real
 solved current** — not an estimate, and not a language model guessing at Ohm's
-law.
+law. The catalog exposes 17 entries: 16 base component types plus the custom `motor_fan` desk-fan variant.
 
 ```
 place_component battery → bat1

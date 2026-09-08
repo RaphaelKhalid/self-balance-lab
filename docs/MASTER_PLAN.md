@@ -1,4 +1,6 @@
 # SelfBalance Lab → GYRO: Master Product Plan
+> **Status: archived historical planning.** The current shipped product is [SelfBalance - Invention Studio](../README.md). Use the [README](../README.md) and [PearX demo](PearX-demo.md) for current behavior. The claims and plans below describe an earlier snapshot and are not current product, pricing, traction, or roadmap commitments.
+
 
 **Goal:** Take the current browser prototype (drag-and-drop robot assembly + Rapier physics balancing sim) to a polished, marketable educational product shipped as (1) a production web app and (2) a native-feeling iOS app, under the **GYRO** brand.
 

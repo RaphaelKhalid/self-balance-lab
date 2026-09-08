@@ -1,96 +1,83 @@
-# SelfBalance Lab
+# SelfBalance — Invention Studio
 
-A browser electronics bench where the circuit is **actually solved**, not drawn.
+SelfBalance is an AI invention studio for kids ages 10-14. Describe a
+little invention, build it from electronic parts, and change it to see what
+happens. The workbench combines a real steady-state DC circuit solver with a
+3D bench and a motor physics test.
 
-Drag components onto a bench, wire them pin to pin, and a real DC circuit solver
-(Modified Nodal Analysis) works out the current in every branch — lighting LEDs
-in proportion to it, spinning motors from it, and flagging your shorts. Then hit
-**RUN** to drive the wired motor in a Rapier physics simulation.
+Live app: [selfbalance-lab.vercel.app](https://selfbalance-lab.vercel.app/)
 
-Zero build step. Static files and ES modules, all dependencies from CDN.
+![SelfBalance invention studio](assets/studio-preview.jpg)
 
-**Live:** https://selfbalance-lab.vercel.app/
+## The studio
 
-## Why it's different
+The catalog has 17 entries: 16 base component types plus the custom desk-fan
+variant. Parts have real pins and electrical parameters, and the solver reports
+branch current, LEDs, motor behavior, shorts, and over-current conditions as a
+build changes.
 
-Most browser circuit tools either draw a schematic or simulate a microcontroller.
-This one computes the electricity, and that has a consequence worth stating
-plainly: **you cannot bluff it.**
+The custom 3D kit includes a fan, battery, motor, lamp, and readable controls.
+The starter shelf includes:
 
-Put an LED straight across a 7.4 V battery and the solver reports 0.44 A and
-raises a short. Add the default 100 Ω resistor and it still passes 48 mA through
-a part rated for 30 — no violation, no warning, just a number that is wrong. You
-have to size the resistor. Physics decides, not a rubric and not a language model.
+- **Pocket breeze** - a fan with a switch and power dial.
+- **Little light** (`Light switch`) - a switch-controlled lamp.
+- **Secret signal** (`Push-button buzzer`) - a momentary button that makes sound only while held.
 
-The same property makes the build **agent-safe**: an assistant can only make the
-moves a human can, and the solver checks every one of them.
+Drag parts onto the bench, wire pin to pin, and edit values under **Look inside the circuit**. The Hephaestus assistant can place parts, lay them out, wire them,
+rename the invention, toggle switches, and tune parameters through the same
+validated tool API used by the interface. RUN keeps the actual creation and
+couples its solved motor current to the motor physics; returning to the bench
+continues the same build. Builds save locally and can be shared with a URL.
+The phone shell provides the same workflow on a small touch screen.
 
-## Try it
+## Honest limits
+
+The solver is a steady-state DC model. It does not run general code, blinking
+programs, transient or AC behavior, or airflow simulation. RUN tests motor
+physics driven by the solved current; it is not a full robotics simulator.
+Hephaestus needs the deployed Vercel proxy with an OpenRouter or Gemini key.
+The static app and manual building work without that AI connection.
+
+## Run locally
+
+The app has no build step and loads its browser dependencies from the import map
+in `index.html`:
 
 ```bash
-npx serve .          # or: python -m http.server 8000
+npm install
+npm run serve
 ```
 
-Needs WebGL and WebAssembly. Open the printed URL.
+Open the printed local URL in a browser with WebGL and WebAssembly. The local
+server serves the static app; it does not provide the Vercel AI backend, so
+Hephaestus requires a separately configured endpoint when running locally.
 
-- **Drag** a part from the tray onto the bench (parts fall and stack — real gravity)
-- **Click a pin, then another** to wire them
-- **Right-click** a wire or part to delete it · **R** rotates · **drag** to move
-- **Scroll a potentiometer knob** to change resistance and watch the current follow
-- **Drag the 💡 desk lamp** over a photoresistor, or the 🔥 candle over a thermistor
-- **RUN** drops the solved motor current into a physics sim
-
-There's an example gallery (LED torch, motor dimmer, relay-switched motor,
-light- and heat-sensing circuits) and **Hephaestus**, a natural-language
-assistant that builds and wires circuits through the same API you do.
-
-## What's in here
-
-| Path | What it is |
-|---|---|
-| `js/sim/circuit.js` | The MNA solver. Pure maths — no THREE, no DOM |
-| `js/model/` | `RobotDoc v2` document + the 16-component library |
-| `js/api/index.js` | `window.__api` — the single mutation authority |
-| `js/app/` | The 3D bench, inspector, assistant, phone shell |
-| `mcp/` | MCP server exposing the solver + document to other agents |
-| `bench/` | A circuit benchmark for LLMs, graded by the solver |
-| `tests/` | Playwright suite |
-
-The solver and document layer import into Node unchanged, which is why `mcp/`
-and `bench/` can run the *identical* solver server-side rather than a second
-implementation that drifts.
-
-## Benchmark
-
-`bench/` runs a language model through the same tool surface a human uses and
-grades the result with the solver — no rubric, no LLM judge.
+## Development and verification
 
 ```bash
-npm run bench:verify                     # free: proves every task is solvable
-npm run bench -- --provider openrouter   # needs OPENROUTER_API_KEY
-```
-
-First result: `deepseek/deepseek-v4-flash` scored 27/29 blind (no solver
-feedback) for about two cents. See `bench/README.md` — including why that is a
-result *against* the hypothesis it was built to test.
-
-## Development
-
-```bash
-npm test          # Playwright, headless, software WebGL
-npm run test:mcp  # the solver + tool layer, no browser
+npm test          # browser suite (62 checks in the current suite)
+npm run test:mcp  # solver and tool suite (10 checks)
 npm run lint
 ```
 
-Headless WebGL runs slower than real time, so tests poll state rather than using
-fixed waits. The one debug/authority hook is `window.__api`.
+The single mutation and inspection authority is `window.__api`. The circuit
+solver and document model are pure modules shared by the browser and the MCP
+server, so both surfaces evaluate the same builds.
 
-## History
+| Path | Purpose |
+|---|---|
+| `js/model/library.js` | 17-entry component catalog, pins, and defaults |
+| `js/sim/circuit.js` | Modified Nodal Analysis DC solver |
+| `js/api/index.js` | Document mutations and reads through `window.__api` |
+| `js/app/creator-assembly.js` | 3D placement, wiring, bench physics, and live feedback |
+| `js/app/invention-studio.js` | Kid-focused invention heading, controls, and experiment readout |
+| `js/app/invention-models.js` | Custom 3D fan, battery, motor, lamp, and control models |
+| `js/parts.js` | Reusable detailed battery and motor meshes |
+| `js/sim/creator-sim.js` | RUN-mode motor physics driven by solved current |
+| `js/app/hephaestus.js` | AI co-builder client loop |
+| `js/app/mobile.js` | Phone shell and touch layout |
+| `mcp/` | Browserless access to the same document and solver |
+| `tests/` | Playwright browser verification |
 
-This was a fixed self-balancing-robot curriculum. In the mid-2026 pivot that was
-**deliberately deleted** — the lessons, the guided flow, the CodeMirror firmware
-editor, the PID loop, the robot registry — and replaced with an open creator
-sandbox built on one mutation API and a real solver.
-
-So there is no balancing robot, no PID and no IMU here, and that is a decision
-rather than an omission. `CLAUDE.md` has the full architecture.
+The canonical repository is
+[RaphaelKhalid/self-balance-lab](https://github.com/RaphaelKhalid/self-balance-lab).

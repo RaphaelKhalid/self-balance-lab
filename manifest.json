@@ -1,12 +1,17 @@
 {
-  "name": "SelfBalance Lab — Robotics Creator",
+  "name": "SelfBalance — Invention Studio",
   "short_name": "SelfBalance",
-  "description": "Build a circuit from real components in your browser, wire it pin to pin, and watch a real solver and physics sim run it.",
+  "description": "An invention studio for kids ages 10–14. Build a fan, light, or buzzer, then change the circuit and see what happens.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0d12",
-  "theme_color": "#0a0d12",
+  "background_color": "#fafbf8",
+  "theme_color": "#267967",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

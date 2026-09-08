@@ -30,12 +30,12 @@ const STEPS = [
     hintTouch: 'Tap the battery + pin, then a motor pin, to join them.',
     done: ({ doc }) => wired(doc, 'power+', 'motor') },
   { label: 'Close the loop so current flows',
-    hint: 'Wire battery − back to the motor. The Inspector will show current.',
-    hintTouch: 'Wire battery − back to the motor. Circuit (bottom bar) shows the current.',
+    hint: 'Wire battery − back to the motor. Open circuit details to see the current.',
+    hintTouch: 'Wire battery − back to the motor. Science (bottom bar) shows the current.',
     done: ({ elec }) => currentFlows(elec) },
   { label: 'Press RUN to watch it spin',
-    hint: 'Hit RUN (top right) to drop into the physics sim.',
-    hintTouch: 'Hit RUN (bottom right) to drop into the physics sim.',
+    hint: 'Hit RUN on the right to test this same invention with motor physics.',
+    hintTouch: 'Hit RUN (bottom right) to test your invention without leaving the desk.',
     done: ({ mode }) => mode === 'sim' },
 ];
 
