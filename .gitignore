@@ -25,3 +25,6 @@ playwright-report/
 
 # Local visual review captures
 artifacts/
+
+# local agent notes (kept out of the repo)
+/CLAUDE.md
