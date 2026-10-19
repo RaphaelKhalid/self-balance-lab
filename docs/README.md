@@ -10,9 +10,8 @@ SelfBalance - Invention Studio is the current product. Start with the [root READ
 
 ## Archived planning and research
 
-The files below are retained as dated design history. They include the former GYRO/self-balancing curriculum, pre-pivot product plans, and unvalidated go-to-market or compliance assumptions. Each has an archive notice; do not use it as a current feature, pricing, traction, or roadmap specification.
+The files below are retained as dated design history. They include the former GYRO/self-balancing curriculum, pre-pivot product notes, and unvalidated compliance assumptions. Each has an archive notice; do not use it as a current feature, pricing, traction, or roadmap specification.
 
 - ACTION_ITEMS.md, APPSTORE_CHECKLIST.md, COMPLIANCE.md, DECISIONS.md
-- GTM.md, MASTER_PLAN.md, PIVOT_PROMPT.md, STANDARDS_MAP.md
-- YC_APPLICATION.md, roundtable-review*.md
+- STANDARDS_MAP.md
 - research/ - dated research and evaluation notes
